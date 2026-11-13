@@ -1,0 +1,193 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+
+  /* Brand — deep purple from the AvodahLoans nav (#46208d) */
+  --color-brand-50: #f6f3fd;
+  --color-brand-100: #ece6fa;
+  --color-brand-200: #d6c9f4;
+  --color-brand-300: #b39de8;
+  --color-brand-500: #6d3fd0;
+  --color-brand-600: #5a2db3;
+  --color-brand-700: #46208d;
+  --color-brand-800: #351671;
+  --color-brand-900: #241052;
+  --color-brand-950: #160934;
+
+  /* Accent — orange → amber gradient from the original CTAs */
+  --color-flame-50: #fff7ed;
+  --color-flame-100: #ffedd5;
+  --color-flame-400: #fb923c;
+  --color-flame-500: #f97316;
+  --color-flame-600: #c2410c;
+  --color-sun-400: #fbbf24;
+
+  /* Neutrals & semantic */
+  --color-ink: #1a0f33;
+  --color-muted: #5b5670;
+  --color-paper: #fbfaf8;
+  --color-line: #e9e5f2;
+  --color-success: #15803d;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-paper font-sans text-ink antialiased;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+    text-wrap: balance;
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    background: var(--color-flame-400);
+    color: var(--color-ink);
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-flame-500);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  button,
+  a,
+  label,
+  select {
+    touch-action: manipulation;
+  }
+  button:not(:disabled),
+  [role="button"],
+  select {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-brand-700 uppercase;
+  }
+  .btn-primary {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 font-semibold text-white transition-[transform,box-shadow] duration-200 ease-out;
+    background: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-800));
+    box-shadow: 0 10px 30px -12px rgb(70 32 141 / 0.65);
+  }
+  .btn-accent {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl px-6 font-semibold text-ink transition-[transform,box-shadow] duration-200 ease-out;
+    background: linear-gradient(135deg, var(--color-flame-500), var(--color-sun-400));
+    box-shadow: 0 10px 30px -10px rgb(249 115 22 / 0.6);
+  }
+  .btn-primary:hover,
+  .btn-accent:hover {
+    transform: translateY(-2px);
+  }
+  .btn-primary:active,
+  .btn-accent:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-primary:disabled,
+  .btn-accent:disabled {
+    @apply cursor-not-allowed opacity-50;
+    transform: none;
+  }
+  .chip {
+    @apply inline-flex min-h-10 items-center gap-1.5 rounded-full border border-line bg-white px-4 text-sm font-medium text-ink transition-colors hover:border-brand-300;
+  }
+  .chip[aria-pressed="true"],
+  .chip[aria-checked="true"] {
+    @apply border-brand-700 bg-brand-700 text-white;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .btn-ghost {
+    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-6 font-semibold transition-colors duration-200;
+  }
+  .field {
+    @apply min-h-12 w-full rounded-xl border border-line bg-white px-4 text-base text-ink transition-colors outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-100;
+  }
+  /* Underlined accent word: solid color + hand-drawn swash (drawn in by GSAP) */
+  .accent-word {
+    @apply relative inline-block text-flame-600;
+  }
+  .grain-grid {
+    background-image:
+      linear-gradient(to right, rgb(70 32 141 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(70 32 141 / 0.06) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+}
+
+/* EMI range sliders */
+.emi-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-brand-700) var(--pct), var(--color-brand-100) var(--pct));
+  outline-offset: 6px;
+}
+.emi-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: white;
+  border: 6px solid var(--color-flame-500);
+  box-shadow: 0 4px 12px rgb(70 32 141 / 0.3);
+  cursor: grab;
+  transition: transform 150ms ease-out;
+}
+.emi-range::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+  cursor: grabbing;
+}
+.emi-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  border: 6px solid var(--color-flame-500);
+  box-shadow: 0 4px 12px rgb(70 32 141 / 0.3);
+  cursor: grab;
+}
+
+/* Word-mask reveal used by SplitWords */
+.word-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.word-mask > span {
+  display: inline-block;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
