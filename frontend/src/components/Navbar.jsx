@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { LOAN_TYPES } from "../lib/loans";
 import { useAuth } from "../lib/auth";
+import { useActivity } from "../lib/activity";
 import { gsap, ScrollTrigger, useGSAP } from "../lib/motion";
 import { Icon, Logo, LoanIcon } from "./ui";
 
@@ -13,7 +14,7 @@ const LINKS = [
 ];
 
 const linkCls = ({ isActive }) =>
-  `relative inline-flex min-h-11 items-center rounded-lg px-3 text-[15px] font-medium transition-colors hover:text-brand-700 ${
+  `relative inline-flex min-h-11 items-center rounded-lg px-3 text-[15px] font-medium whitespace-nowrap transition-colors hover:text-brand-700 ${
     isActive ? "text-brand-700" : "text-ink"
   }`;
 
@@ -86,9 +87,11 @@ function LoansMenu({ onNavigate }) {
 export default function Navbar() {
   const bar = useRef(null);
   const [open, setOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { applications } = useActivity();
   const { pathname } = useLocation();
+  const appsPath = "/dashboard?tab=applications";
+  const appsHref = user ? appsPath : `/login?next=${encodeURIComponent(appsPath)}`;
 
   useEffect(() => setOpen(false), [pathname]);
 
@@ -127,18 +130,18 @@ export default function Navbar() {
               <Link to="/dashboard" className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-50 px-3 text-sm font-medium text-brand-800 transition-colors hover:bg-brand-100">
                 <Icon name="LayoutDashboard" size={16} /> <span className="hidden xl:inline">{masked}</span><span className="xl:hidden">Dashboard</span>
               </Link>
-              <button onClick={logout} className="inline-flex size-11 items-center justify-center rounded-xl text-muted hover:bg-brand-50 hover:text-ink" aria-label="Log out">
-                <Icon name="LogOut" size={18} />
-              </button>
             </div>
           ) : (
             <Link to={`/login?next=${encodeURIComponent(pathname)}`} className="hidden min-h-11 items-center gap-2 rounded-xl border border-line bg-white px-4 text-sm font-semibold text-ink transition-colors hover:border-brand-300 sm:inline-flex">
               <Icon name="LogIn" size={16} /> Login
             </Link>
           )}
-          <button onClick={() => navigate("/search")} className="btn-primary hidden min-h-11 px-5 text-sm md:inline-flex">
-            <Icon name="Search" size={16} /> Search Loan
-          </button>
+          <Link to={appsHref} title="My Applications" className="btn-primary hidden min-h-11 px-5 text-sm whitespace-nowrap md:inline-flex lg:max-xl:px-3.5">
+            <Icon name="FileText" size={16} /> <span className="lg:max-xl:sr-only">My Applications</span>
+            {user && applications.length > 0 && (
+              <span className="grid min-w-5 place-items-center rounded-full bg-white/20 px-1.5 text-xs font-bold tabular-nums">{applications.length}</span>
+            )}
+          </Link>
           <button
             className="inline-flex size-11 items-center justify-center rounded-xl text-ink hover:bg-brand-50 lg:hidden"
             aria-expanded={open}

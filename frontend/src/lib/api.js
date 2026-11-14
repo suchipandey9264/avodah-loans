@@ -11,19 +11,41 @@ const setToken = (t) => {
   try { t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY); } catch { /* storage unavailable */ }
 };
 
+// 502/503/504 or a refused connection mean the request never reached the API (e.g. it is restarting),
+// so it is safe to retry — even a POST. Waits ~0.5s, 1s, 2s, 3s between attempts.
+const UNREACHABLE = new Set([502, 503, 504]);
+const RETRY_DELAYS = [500, 1000, 2000, 3000];
+const UNAVAILABLE_MSG = "Our server is temporarily unavailable. Please try again in a moment.";
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
 async function request(path, { method = "GET", body, query } = {}) {
   const qs = query ? "?" + new URLSearchParams(query) : "";
   const token = getToken();
-  const res = await fetch(BASE + path + qs, {
+  const init = {
     method,
     headers: {
       ...(body && { "Content-Type": "application/json" }),
       ...(token && { Authorization: `Bearer ${token}` }),
     },
     body: body ? JSON.stringify(body) : undefined,
-  });
+  };
+
+  let res;
+  for (let attempt = 0; ; attempt++) {
+    try {
+      res = await fetch(BASE + path + qs, init);
+      if (!UNREACHABLE.has(res.status) || attempt >= RETRY_DELAYS.length) break;
+    } catch {
+      if (attempt >= RETRY_DELAYS.length) throw Object.assign(new Error(UNAVAILABLE_MSG), { status: 0 });
+    }
+    await wait(RETRY_DELAYS[attempt]);
+  }
+
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.error ?? `Request failed (${res.status})`), { status: res.status });
+  if (!res.ok) {
+    const fallback = UNREACHABLE.has(res.status) ? UNAVAILABLE_MSG : `Request failed (${res.status})`;
+    throw Object.assign(new Error(data.error ?? fallback), { status: res.status });
+  }
   return data;
 }
 
