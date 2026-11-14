@@ -2,6 +2,9 @@ import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { gsap, useGSAP, MOTION_OK, prefersReducedMotion } from "../lib/motion";
 import { logCredit } from "../lib/activity";
+import { api } from "../lib/api";
+import { check, creditReportSchema } from "../lib/schemas";
+import { Captcha } from "../components/Captcha";
 import { Icon, SectionHeading } from "../components/ui";
 
 const BANDS = [
@@ -64,20 +67,32 @@ function Gauge({ score }) {
 function ReportForm() {
   const [sent, setSent] = useState(false);
   const [errors, setErrors] = useState({});
-  const submit = (e) => {
+  const [busy, setBusy] = useState(false);
+  const captcha = useRef(null);
+
+  const submit = async (e) => {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    const errs = {
-      name: f.get("name").trim() ? "" : "Enter your full name as on PAN.",
-      phone: /^[6-9]\d{9}$/.test(f.get("phone").replace(/\D/g, "")) ? "" : "Enter a valid 10-digit mobile number.",
-      pan: /^[A-Z]{5}\d{4}[A-Z]$/.test(f.get("pan").toUpperCase()) ? "" : "PAN format: ABCDE1234F",
-      consent: f.get("consent") ? "" : "Please give consent to fetch your report.",
-    };
+    const form = e.currentTarget;
+    const f = new FormData(form);
+    const { data, errors: errs } = check(creditReportSchema, {
+      name: f.get("name"),
+      phone: f.get("phone"),
+      pan: f.get("pan"),
+      consent: f.get("consent") === "on",
+    });
     setErrors(errs);
-    const first = Object.keys(errs).find((k) => errs[k]);
-    if (first) return e.currentTarget.elements[first].focus();
-    logCredit({ name: f.get("name").trim() });
-    setSent(true);
+    if (!data) return form.elements[Object.keys(errs)[0]]?.focus();
+    setBusy(true);
+    try {
+      const captchaToken = await captcha.current?.getToken();
+      await api.requestCreditReport({ ...data, captchaToken });
+      logCredit({ name: data.name });
+      setSent(true);
+    } catch (err) {
+      setErrors(err.fields && Object.keys(err.fields).length ? err.fields : { _: err.message || "Couldn’t send your request — please try again." });
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (sent)
@@ -107,7 +122,11 @@ function ReportForm() {
         I authorise AvodahLoans to fetch my credit report from credit bureaus for loan matching. This won’t affect my score.
       </label>
       <span id="consent-e" className="min-h-4 text-xs text-red-700">{errors.consent}</span>
-      <button className="btn-primary mt-1 w-full">Get my free report <Icon name="ArrowRight" size={18} /></button>
+      {errors._ && <p role="alert" className="text-sm text-red-700">{errors._}</p>}
+      <button disabled={busy} className="btn-primary mt-1 w-full disabled:opacity-60">
+        {busy ? "Sending…" : <>Get my free report <Icon name="ArrowRight" size={18} /></>}
+      </button>
+      <Captcha ref={captcha} className="flex justify-center empty:hidden" />
     </form>
   );
 }

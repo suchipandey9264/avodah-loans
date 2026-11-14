@@ -5,6 +5,8 @@ import { api } from "../lib/api";
 import { updateProfile } from "../lib/activity";
 import { gsap, useGSAP, MOTION_OK } from "../lib/motion";
 import { Icon, Logo } from "../components/ui";
+import { Captcha, CaptchaError } from "../components/Captcha";
+import { check, loginSchema, otpSchema } from "../lib/schemas";
 
 const PERKS = [
   ["BadgeCheck", "Pre-approved offers saved to one place"],
@@ -16,10 +18,6 @@ const METHODS = [
   { id: "phone", label: "Mobile number", icon: "Smartphone" },
   { id: "email", label: "Email address", icon: "Mail" },
 ];
-
-const NAME_RE = /^[A-Za-z][A-Za-z .'-]{1,79}$/;
-const PHONE_RE = /^[6-9]\d{9}$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function OtpInput({ value, onChange, invalid }) {
   const refs = useRef([]);
@@ -81,6 +79,7 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const root = useRef(null);
+  const captcha = useRef(null);
 
   const [step, setStep] = useState("details");
   const [method, setMethod] = useState("phone");
@@ -119,13 +118,7 @@ export default function Login() {
     { scope: root, dependencies: [step], revertOnUpdate: true }
   );
 
-  const validate = () => {
-    const e = {};
-    if (!NAME_RE.test(name.trim())) e.name = "Enter your full name as on your PAN card.";
-    if (method === "phone" && !PHONE_RE.test(phone)) e.contact = "Enter a valid 10-digit Indian mobile number.";
-    if (method === "email" && !EMAIL_RE.test(email.trim())) e.contact = "Enter a valid email address, like name@example.com.";
-    return e;
-  };
+  const validate = () => check(loginSchema(method), { name, contact: method === "phone" ? phone : email }).errors;
 
   const sendOtp = async (ev) => {
     ev?.preventDefault();
@@ -133,15 +126,24 @@ export default function Login() {
     setErrors(e);
     if (e.name) return document.getElementById("l-name")?.focus();
     if (e.contact) return document.getElementById("l-contact")?.focus();
+    // Messages show beside the contact field on the first step, or under the code boxes when resending.
+    const errKey = step === "otp" ? "otp" : "contact";
     setBusy(true);
+    let captchaToken;
     try {
-      const res = await api.sendOtp(contact);
+      captchaToken = await captcha.current?.getToken();
+    } catch (err) {
+      setBusy(false);
+      return setErrors({ [errKey]: err instanceof CaptchaError ? err.message : "Security check failed — please try again." });
+    }
+    try {
+      const res = await api.sendOtp({ ...contact, captchaToken });
       setMode("api");
       setDevOtp(res.devOtp ?? "");
     } catch (err) {
       if (err.status && err.status < 500) {
         setBusy(false);
-        return setErrors({ contact: err.message });
+        return setErrors({ [errKey]: err.fields?.phone ?? err.fields?.email ?? err.message });
       }
       setMode("local"); // backend offline → demo login on this device
       setDevOtp("");
@@ -154,8 +156,9 @@ export default function Login() {
 
   const verify = async (ev) => {
     ev.preventDefault();
-    if (!/^\d{6}$/.test(otp)) {
-      setErrors({ otp: "Enter all 6 digits of the code." });
+    const otpError = check(otpSchema, { otp }).errors.otp;
+    if (otpError) {
+      setErrors({ otp: otpError });
       gsap.fromTo(".otp-box", { x: -6 }, { x: 0, duration: 0.4, ease: "elastic.out(1,0.3)" });
       return;
     }
@@ -354,6 +357,8 @@ export default function Login() {
                 </p>
               </form>
             )}
+            {/* Invisible unless Cloudflare asks for a check; shared by "Send OTP" and "Resend code". */}
+            <Captcha ref={captcha} className="mt-4 flex justify-center empty:hidden" />
           </div>
 
           <p className="mt-8 text-center text-sm text-muted">

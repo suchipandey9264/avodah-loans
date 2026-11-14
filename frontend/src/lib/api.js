@@ -44,7 +44,8 @@ async function request(path, { method = "GET", body, query } = {}) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const fallback = UNREACHABLE.has(res.status) ? UNAVAILABLE_MSG : `Request failed (${res.status})`;
-    throw Object.assign(new Error(data.error ?? fallback), { status: res.status });
+    // `fields` maps field names to the server's validation messages (see backend/src/lib/validate.js).
+    throw Object.assign(new Error(data.error ?? fallback), { status: res.status, fields: data.fields ?? {} });
   }
   return data;
 }
@@ -58,7 +59,7 @@ export const api = {
   emi: (principal, rate, months) => request("/emi", { method: "POST", body: { principal, rate, months } }),
 
   // Auth
-  /** contact = { phone } or { email } */
+  /** contact = { phone } or { email }, plus captchaToken when captcha is on */
   sendOtp: (contact) => request("/auth/otp", { method: "POST", body: contact }),
   async verifyOtp(contact, otp, name) {
     const out = await request("/auth/verify", { method: "POST", body: { ...contact, otp, name } });

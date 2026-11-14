@@ -2,21 +2,15 @@ import { createHash } from "node:crypto";
 import { Session, User } from "../models/index.js";
 
 export class HttpError extends Error {
-  constructor(status, message) {
+  /** `extra.fields` maps field names to messages (set by validate.parse). */
+  constructor(status, message, extra = {}) {
     super(message);
     this.status = status;
+    this.fields = extra.fields;
   }
 }
 
-export const PHONE_RE = /^[6-9]\d{9}$/;
-export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const sha256 = (s) => createHash("sha256").update(s).digest("hex");
-
-export function requireFields(body, fields) {
-  for (const f of fields) {
-    if (body?.[f] == null || String(body[f]).trim() === "") throw new HttpError(400, `"${f}" is required`);
-  }
-}
 
 /** Reads the Bearer token and attaches req.user (or null). */
 export async function session(req, _res, next) {
