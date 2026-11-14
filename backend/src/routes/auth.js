@@ -1,6 +1,10 @@
 import { randomBytes, randomInt } from "node:crypto";
 import { Router } from "express";
-import { EMAIL_RE, HttpError, PHONE_RE, publicUser, requireUser, sha256 } from "../lib/http.js";
+import { z } from "zod";
+import { HttpError, publicUser, requireUser, sha256 } from "../lib/http.js";
+import { requireCaptcha } from "../lib/captcha.js";
+import { otpContactLimiter, otpIpLimiter, verifyLimiter } from "../lib/limits.js";
+import { email, parse, phone, verifyBody } from "../lib/validate.js";
 import { Otp, Session, User } from "../models/index.js";
 
 const r = Router();
@@ -8,20 +12,16 @@ const DEMO = process.env.OTP_DEMO !== "false";
 const OTP_TTL = 5 * 60 * 1000;
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 
-/** Accepts { phone } or { email }; returns { field, value } or throws. */
+/** Accepts { phone } or { email }; returns { field, value } or throws a 400. */
 function identify(body) {
   if (body?.email != null && String(body.email).trim()) {
-    const email = String(body.email).trim().toLowerCase();
-    if (!EMAIL_RE.test(email)) throw new HttpError(400, "Enter a valid email address");
-    return { field: "email", value: email };
+    return { field: "email", value: parse(z.object({ email }), { email: String(body.email) }).email };
   }
-  const phone = String(body?.phone ?? "");
-  if (!PHONE_RE.test(phone)) throw new HttpError(400, "Enter a valid 10-digit mobile number");
-  return { field: "phone", value: phone };
+  return { field: "phone", value: parse(z.object({ phone }), { phone: String(body?.phone ?? "") }).phone };
 }
 
-/** POST /api/auth/otp { phone } | { email } — sends a 6-digit OTP by SMS or email. */
-r.post("/otp", async (req, res) => {
+/** POST /api/auth/otp { phone } | { email }, captchaToken — sends a 6-digit OTP by SMS or email. */
+r.post("/otp", otpIpLimiter, otpContactLimiter, requireCaptcha, async (req, res) => {
   const { field, value } = identify(req.body);
   const code = String(randomInt(100000, 1000000));
   await Otp.findOneAndUpdate(
@@ -35,11 +35,9 @@ r.post("/otp", async (req, res) => {
 });
 
 /** POST /api/auth/verify { phone | email, otp, name? } → { token, user } */
-r.post("/verify", async (req, res) => {
+r.post("/verify", verifyLimiter, async (req, res) => {
   const { field, value } = identify(req.body);
-  const otp = String(req.body?.otp ?? "");
-  const name = String(req.body?.name ?? "").trim().slice(0, 80);
-  if (!/^\d{6}$/.test(otp)) throw new HttpError(400, "Enter the 6-digit code");
+  const { otp, name } = parse(verifyBody, req.body);
 
   // Demo mode mirrors the old front-end behaviour: any 6 digits work.
   if (!DEMO) {

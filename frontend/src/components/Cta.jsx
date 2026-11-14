@@ -3,21 +3,36 @@ import { CONTACT } from "../lib/content";
 import { Link } from "react-router-dom";
 import { gsap, useGSAP, MOTION_OK } from "../lib/motion";
 import { logCallback } from "../lib/activity";
+import { api } from "../lib/api";
+import { callbackSchema, check } from "../lib/schemas";
+import { Captcha } from "./Captcha";
 import { Icon } from "./ui";
 
 export function CallbackForm() {
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [busy, setBusy] = useState(false);
+  const captcha = useRef(null);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    if (!data.get("name").trim()) return setError("name");
-    if (data.get("phone").replace(/\D/g, "").length < 10) return setError("phone");
-    setError("");
-    logCallback({ name: data.get("name").trim() });
-    setSent(true);
+    const form = e.currentTarget;
+    const { data, errors: errs } = check(callbackSchema, Object.fromEntries(new FormData(form)));
+    setErrors(errs);
+    if (!data) return form.elements[Object.keys(errs)[0]]?.focus();
+    setBusy(true);
+    try {
+      const captchaToken = await captcha.current?.getToken();
+      await api.requestCallback({ ...data, captchaToken });
+      logCallback({ name: data.name });
+      setSent(true);
+    } catch (err) {
+      setErrors(err.fields && Object.keys(err.fields).length ? err.fields : { _: err.message || "Couldn’t send your request — please try again." });
+    } finally {
+      setBusy(false);
+    }
   };
+  const message = errors.name || errors.phone || errors._;
 
   if (sent)
     return (
@@ -31,17 +46,15 @@ export function CallbackForm() {
     <form onSubmit={submit} noValidate className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
       <label className="grid gap-1 text-sm">
         <span className="text-brand-100">Your name</span>
-        <input name="name" autoComplete="name" aria-invalid={error === "name"} aria-describedby="cb-err" className="field border-white/20 bg-white/10 text-white placeholder:text-brand-300 focus:border-flame-400 focus:ring-flame-400/30" placeholder="Priya Shah" />
+        <input name="name" autoComplete="name" aria-invalid={!!errors.name} aria-describedby="cb-err" className="field border-white/20 bg-white/10 text-white placeholder:text-brand-300 focus:border-flame-400 focus:ring-flame-400/30" placeholder="Priya Shah" />
       </label>
       <label className="grid gap-1 text-sm">
         <span className="text-brand-100">Mobile number</span>
-        <input name="phone" type="tel" autoComplete="tel" aria-invalid={error === "phone"} aria-describedby="cb-err" className="field border-white/20 bg-white/10 text-white placeholder:text-brand-300 focus:border-flame-400 focus:ring-flame-400/30" placeholder="98765 43210" />
+        <input name="phone" type="tel" autoComplete="tel" aria-invalid={!!errors.phone} aria-describedby="cb-err" className="field border-white/20 bg-white/10 text-white placeholder:text-brand-300 focus:border-flame-400 focus:ring-flame-400/30" placeholder="98765 43210" />
       </label>
-      <button type="submit" className="btn-accent self-end">Call me back</button>
-      <p id="cb-err" role="alert" className="text-sm text-flame-400 sm:col-span-3">
-        {error === "name" && "Please tell us your name."}
-        {error === "phone" && "Enter a 10-digit mobile number."}
-      </p>
+      <button type="submit" disabled={busy} className="btn-accent self-end disabled:opacity-60">{busy ? "Sending…" : "Call me back"}</button>
+      <p id="cb-err" role="alert" className="text-sm text-flame-400 sm:col-span-3">{message}</p>
+      <Captcha ref={captcha} theme="dark" className="empty:hidden sm:col-span-3" />
     </form>
   );
 }

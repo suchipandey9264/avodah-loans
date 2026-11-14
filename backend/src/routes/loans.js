@@ -2,6 +2,7 @@ import { Router } from "express";
 import { DOCUMENTS, ELIGIBILITY, EMPLOYMENT, LENDER_KINDS, LOAN_TYPES, getOffers } from "../data/loans.js";
 import { emi } from "../lib/emi.js";
 import { HttpError } from "../lib/http.js";
+import { emiBody, offersQuery, parse } from "../lib/validate.js";
 import { Lender } from "../models/index.js";
 
 const r = Router();
@@ -33,14 +34,10 @@ r.get("/lenders/:id", async (req, res) => {
 
 /** GET /api/offers?type=home&amount=3500000&tenure=20&income=1200000 */
 r.get("/offers", async (req, res) => {
-  const type = LOAN_TYPES.find((t) => t.id === req.query.type);
-  const amount = Number(req.query.amount);
-  const tenure = Number(req.query.tenure);
-  const annualIncome = Number(req.query.income);
-  if (!type) throw new HttpError(400, "Unknown loan type");
-  if (!(amount >= type.min && amount <= type.max)) throw new HttpError(400, `Amount must be between ${type.min} and ${type.max}`);
-  if (!(tenure > 0 && tenure <= 30)) throw new HttpError(400, "Tenure must be 1–30 years");
-  if (!(annualIncome > 0)) throw new HttpError(400, "Annual income is required");
+  const q = parse(offersQuery, req.query);
+  const type = LOAN_TYPES.find((t) => t.id === q.type);
+  const { amount, tenure, income: annualIncome } = q;
+  if (!(amount >= type.min && amount <= type.max)) throw new HttpError(400, `Amount must be between ${type.min} and ${type.max}`, { fields: { amount: "Out of range" } });
 
   const lenders = await activeLenders({ "products.type": type.id });
   const offers = getOffers({ type: type.id, amount, tenure, annualIncome }, emi, lenders).map((o) => ({ ...o, tenureMonths: tenure * 12 }));
@@ -49,8 +46,7 @@ r.get("/offers", async (req, res) => {
 
 /** POST /api/emi { principal, rate, months } */
 r.post("/emi", (req, res) => {
-  const { principal, rate, months } = req.body ?? {};
-  if (!(principal > 0 && rate >= 0 && months > 0)) throw new HttpError(400, "principal, rate and months are required");
+  const { principal, rate, months } = parse(emiBody, req.body);
   const monthly = emi(principal, rate, months);
   res.json({ emi: monthly, totalPayment: monthly * months, totalInterest: monthly * months - principal });
 });
