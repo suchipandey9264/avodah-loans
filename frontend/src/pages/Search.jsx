@@ -21,19 +21,18 @@ const TIPS = {
   details: "We only run a soft check. Your credit score is not affected and nothing is shared without your consent.",
 };
 
-/* ---------- Left journey panel ---------- */
+/* ---------- Journey header: what you're searching for + progress ---------- */
 function Journey({ step, type, emp }) {
   const current = STEPS.findIndex((s) => s.id === step);
+  const empLabel = EMPLOYMENT.find((e) => e.id === emp)?.label;
   return (
-    <aside className="relative overflow-hidden rounded-[28px] bg-brand-900 p-6 text-white lg:sticky lg:top-24 lg:p-8">
-      <div className="grain-grid pointer-events-none absolute inset-0 opacity-30" />
-      <div className="pointer-events-none absolute -right-20 -bottom-20 size-64 rounded-full bg-flame-500/25 blur-3xl" />
-      <div className="relative">
+    <header className="relative overflow-hidden border-b border-line bg-gradient-to-r from-brand-50 via-white to-flame-50/40 px-6 py-5 sm:px-10">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
         {type ? (
           <div className="flex items-center gap-3">
-            <LoanIcon name={type.icon} active className="size-12" size={24} />
+            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-brand-700 text-white shadow-lg shadow-brand-700/25"><Icon name={type.icon} size={22} /></span>
             <div className="leading-tight">
-              <p className="text-xs text-brand-200">You’re searching for</p>
+              <p className="text-xs font-medium text-muted">You’re searching for</p>
               <p className="font-display text-xl font-bold">{type.label}</p>
             </div>
           </div>
@@ -41,34 +40,48 @@ function Journey({ step, type, emp }) {
           <p className="font-display text-2xl font-bold">Let’s find your loan.</p>
         )}
 
-        <ol className="mt-8 hidden gap-0 lg:grid">
+        {/* Desktop: full stepper */}
+        <ol className="hidden items-center gap-2 md:flex" aria-label="Progress">
           {STEPS.map((s, i) => {
             const done = i < current;
             const active = i === current;
             return (
-              <li key={s.id} className="relative flex gap-4 pb-6 last:pb-0">
-                {i < STEPS.length - 1 && <span className={`absolute top-9 left-[17px] h-[calc(100%-2.25rem)] w-0.5 ${done ? "bg-flame-400" : "bg-white/15"}`} />}
-                <span className={`grid size-9 shrink-0 place-items-center rounded-full text-sm font-bold ${done ? "bg-flame-400 text-ink" : active ? "bg-white text-brand-800 ring-4 ring-white/20" : "bg-white/10 text-brand-200"}`}>
-                  {done ? <Icon name="Check" size={16} strokeWidth={3} /> : i + 1}
+              <li key={s.id} className="flex items-center gap-2" aria-current={active ? "step" : undefined}>
+                <span className={`flex items-center gap-2 rounded-full py-1.5 pr-3.5 pl-1.5 text-sm font-semibold transition-colors ${active ? "bg-brand-900 text-white shadow-md shadow-brand-900/20" : done ? "bg-white text-ink ring-1 ring-line" : "text-muted"}`}>
+                  <span className={`grid size-6 place-items-center rounded-full text-xs font-bold ${done ? "bg-flame-400 text-ink" : active ? "bg-white text-brand-800" : "bg-brand-100 text-brand-400"}`}>
+                    {done ? <Icon name="Check" size={13} strokeWidth={3} /> : i + 1}
+                  </span>
+                  <span className="leading-tight">
+                    {s.label}
+                    {s.id === "employment" && done && empLabel && <span className="block text-[11px] font-medium text-muted">{empLabel}</span>}
+                  </span>
                 </span>
-                <span className="pt-1.5">
-                  <span className={`block font-semibold ${active ? "text-white" : done ? "text-brand-100" : "text-brand-300"}`}>{s.label}</span>
-                  {s.id === "employment" && emp && <span className="text-sm text-brand-200">{EMPLOYMENT.find((e) => e.id === emp)?.label}</span>}
-                </span>
+                {i < STEPS.length - 1 && <span className={`h-0.5 w-5 rounded-full lg:w-7 ${done ? "bg-flame-400" : "bg-line"}`} />}
               </li>
             );
           })}
         </ol>
 
-        <div className="mt-8 hidden rounded-2xl bg-white/5 p-4 text-sm text-brand-100 ring-1 ring-white/10 lg:block">
-          <p className="mb-1 flex items-center gap-2 font-semibold text-white"><Icon name="Info" size={16} className="text-flame-400" /> Good to know</p>
-          {TIPS[step]}
+        {/* Mobile: compact progress */}
+        <div className="md:hidden">
+          <p className="text-sm font-semibold">Step {current + 1} of {STEPS.length} · <span className="text-brand-700">{STEPS[current].label}</span></p>
+          <div className="mt-2 flex gap-1.5">
+            {STEPS.map((s, i) => <span key={s.id} className={`h-1.5 flex-1 rounded-full ${i < current ? "bg-flame-400" : i === current ? "bg-brand-700" : "bg-brand-100"}`} />)}
+          </div>
         </div>
-        <p className="mt-6 hidden items-center gap-2 text-xs text-brand-200 lg:flex">
-          <Icon name="Lock" size={14} /> 256-bit encryption · No impact on credit score
-        </p>
       </div>
-    </aside>
+    </header>
+  );
+}
+
+/** "Good to know" note shown beside each step's heading. */
+function Tip({ step }) {
+  if (!TIPS[step]) return null;
+  return (
+    <div className="step-anim rounded-2xl bg-brand-50 p-4 text-sm text-brand-900 ring-1 ring-brand-100 lg:max-w-xs">
+      <p className="mb-1 flex items-center gap-2 font-semibold"><Icon name="Info" size={16} className="text-flame-500" /> Good to know</p>
+      <p className="text-brand-800/80">{TIPS[step]}</p>
+    </div>
   );
 }
 
@@ -103,9 +116,11 @@ const EMP_GROUPS = [
 function EmploymentStep({ type, value, onPick }) {
   const [picked, setPicked] = useState(value);
   const refs = useRef({});
+  const pickedInfo = EMPLOYMENT.find((e) => e.id === picked);
 
-  // Arrow keys move through all six options, like a native radio group.
+  // Arrow keys move through all six options, like a native radio group; Enter continues.
   const onKey = (e, id) => {
+    if (e.key === "Enter" && picked === id) { e.preventDefault(); onPick(id); return; }
     const i = EMPLOYMENT.findIndex((x) => x.id === id);
     const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
     if (!step) return;
@@ -117,70 +132,56 @@ function EmploymentStep({ type, value, onPick }) {
 
   return (
     <div>
-      <h1 className="step-anim text-3xl font-bold sm:text-4xl">How are you employed?</h1>
-      <p className="step-anim mt-2 max-w-xl text-muted">Pick your main source of income. Lenders treat each profile differently for a {type.label.toLowerCase()}, so this keeps your offers realistic.</p>
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="step-anim text-3xl font-bold sm:text-4xl">How are you employed?</h1>
+          <p className="step-anim mt-2 max-w-xl text-muted">Pick your main source of income. Lenders treat each profile differently for a {type.label.toLowerCase()}, so this keeps your offers realistic.</p>
+        </div>
+        <Tip step="employment" />
+      </div>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2" role="radiogroup" aria-label="Employment type">
+      <div className="mt-8 grid gap-7" role="radiogroup" aria-label="Employment type">
         {EMP_GROUPS.map((g) => (
           <section key={g.id} aria-labelledby={`eg-${g.id}`} className="step-anim">
-            <div className="mb-3 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <span className="grid size-9 place-items-center rounded-xl bg-brand-900 text-white"><Icon name={g.icon} size={18} /></span>
               <div className="leading-tight">
                 <h2 id={`eg-${g.id}`} className="font-sans text-base font-bold tracking-normal">{g.title}</h2>
                 <p className="text-xs text-muted">{g.sub}</p>
               </div>
+              <span className="ml-2 hidden h-px flex-1 bg-line sm:block" />
             </div>
 
-            <div className="grid gap-2">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {EMPLOYMENT.filter((e) => e.group === g.id).map((e) => {
                 const on = picked === e.id;
                 return (
-                  <div
+                  <button
                     key={e.id}
-                    className={`overflow-hidden rounded-2xl border-2 transition-[border-color,box-shadow,background-color] duration-300 ${
-                      on ? "border-brand-700 bg-white shadow-[0_18px_40px_-24px_rgb(70_32_141/0.7)]" : "border-line bg-white hover:border-brand-300"
+                    ref={(el) => (refs.current[e.id] = el)}
+                    role="radio"
+                    aria-checked={on}
+                    tabIndex={on || (!picked && e.id === EMPLOYMENT[0].id) ? 0 : -1}
+                    onClick={() => setPicked(e.id)}
+                    onKeyDown={(ev) => onKey(ev, e.id)}
+                    onDoubleClick={() => onPick(e.id)}
+                    className={`group relative flex h-full flex-col rounded-2xl border-2 p-4 text-left sm:p-5 transition-[border-color,box-shadow,background-color,transform] duration-300 ${
+                      on
+                        ? "border-brand-700 bg-brand-50/60 shadow-[0_20px_40px_-26px_rgb(70_32_141/0.8)]"
+                        : "border-line bg-white hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-[0_16px_34px_-26px_rgb(70_32_141/0.6)]"
                     }`}
                   >
-                    <button
-                      ref={(el) => (refs.current[e.id] = el)}
-                      role="radio"
-                      aria-checked={on}
-                      tabIndex={on || (!picked && e.id === EMPLOYMENT[0].id) ? 0 : -1}
-                      onClick={() => setPicked(e.id)}
-                      onKeyDown={(ev) => onKey(ev, e.id)}
-                      onDoubleClick={() => onPick(e.id)}
-                      className="flex w-full items-center gap-3.5 p-4 text-left"
-                    >
-                      <span className={`grid size-12 shrink-0 place-items-center rounded-xl transition-colors duration-300 ${on ? "bg-brand-700 text-white" : "bg-brand-50 text-brand-700"}`}>
+                    <span className="flex items-start justify-between">
+                      <span className={`grid size-11 place-items-center rounded-xl transition-colors duration-300 ${on ? "bg-brand-700 text-white" : "bg-brand-50 text-brand-700 group-hover:bg-brand-100"}`}>
                         <Icon name={e.icon} size={22} />
                       </span>
-                      <span className="min-w-0 flex-1 leading-tight">
-                        <span className="block font-semibold">{e.label}</span>
-                        <span className="mt-0.5 block text-sm text-muted">{e.desc}</span>
+                      <span className={`grid size-6 place-items-center rounded-full border-2 transition-colors ${on ? "border-brand-700 bg-brand-700" : "border-line bg-white"}`}>
+                        <Icon name="Check" size={13} strokeWidth={3} className={`text-white transition-transform duration-300 ease-out-expo ${on ? "scale-100" : "scale-0"}`} />
                       </span>
-                      <span className={`grid size-6 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? "border-brand-700" : "border-line"}`}>
-                        <span className={`size-3 rounded-full bg-brand-700 transition-transform duration-300 ease-out-expo ${on ? "scale-100" : "scale-0"}`} />
-                      </span>
-                    </button>
-
-                    <div className={`grid transition-[grid-template-rows] duration-400 ease-out-expo ${on ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}>
-                      <div className="overflow-hidden" inert={!on}>
-                        <div className="mx-4 mb-4 rounded-xl bg-brand-50 p-4">
-                          <p className="flex items-center gap-1.5 text-xs font-semibold text-brand-800"><Icon name="FileText" size={14} /> Keep these handy for your application</p>
-                          <ul className="mt-2 flex flex-wrap gap-1.5">
-                            {e.docs.map((d) => (
-                              <li key={d} className="inline-flex items-center gap-1 rounded-lg bg-white px-2.5 py-1 text-xs font-medium ring-1 ring-brand-100">
-                                <Icon name="Check" size={12} className="text-success" />{d}
-                              </li>
-                            ))}
-                          </ul>
-                          <button type="button" onClick={() => onPick(e.id)} className="btn-primary mt-4 min-h-11 w-full text-sm">
-                            Continue <Icon name="ArrowRight" size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    </span>
+                    <span className="mt-3 block font-semibold leading-snug">{e.label}</span>
+                    <span className="mt-1 block text-sm leading-snug text-muted">{e.desc}</span>
+                  </button>
                 );
               })}
             </div>
@@ -192,6 +193,29 @@ function EmploymentStep({ type, value, onPick }) {
         <Icon name="Info" size={16} className="mt-0.5 shrink-0 text-brand-600" />
         More than one source? Choose the one that brings in the most — you can add the rest to your dashboard later.
       </p>
+
+      {/* Selection bar: documents for the picked profile + continue */}
+      <div className={`step-anim z-10 mt-8 ${pickedInfo ? "sticky bottom-4" : ""}`}>
+        <div className={`flex flex-col gap-4 rounded-2xl p-4 transition-colors duration-300 sm:flex-row sm:items-center sm:justify-between sm:p-5 ${pickedInfo ? "bg-brand-900 text-white shadow-[0_24px_50px_-24px_rgb(36_16_82/0.8)]" : "bg-paper text-muted ring-1 ring-line"}`}>
+          {pickedInfo ? (
+            <div key={pickedInfo.id} className="min-w-0">
+              <p className="flex items-center gap-1.5 text-xs font-semibold text-brand-200"><Icon name="FileText" size={14} /> Keep these handy for your application</p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {pickedInfo.docs.map((d) => (
+                  <li key={d} className="inline-flex items-center gap-1 rounded-lg bg-white/10 px-2.5 py-1 text-xs font-medium text-white ring-1 ring-white/15">
+                    <Icon name="Check" size={12} className="text-flame-400" />{d}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="flex items-center gap-2 text-sm"><Icon name="Lock" size={14} /> 256-bit encryption · No impact on credit score</p>
+          )}
+          <button type="button" disabled={!pickedInfo} onClick={() => onPick(picked)} className="btn-primary min-h-12 shrink-0 px-7 text-sm disabled:cursor-not-allowed disabled:opacity-50">
+            Continue <Icon name="ArrowRight" size={16} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -374,13 +398,20 @@ export default function Search() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr] lg:gap-10">
-          <Journey step={step} type={type} emp={emp} />
+        <div className="rounded-[28px] border border-line bg-white shadow-[0_30px_60px_-45px_rgb(36_16_82/0.5)]">
+          <div className="overflow-hidden rounded-t-[28px]"><Journey step={step} type={type} emp={emp} /></div>
 
-          <div key={step + (type?.id ?? "")} className="rounded-[28px] border border-line bg-white p-6 shadow-[0_30px_60px_-45px_rgb(36_16_82/0.5)] sm:p-10">
-            {step === "type" && <TypeStep onPick={(id) => update({ type: id })} />}
+          <div key={step + (type?.id ?? "")} className="p-6 sm:p-10">
+            {step === "type" && (
+              <>
+                <TypeStep onPick={(id) => update({ type: id })} />
+                <div className="mt-8"><Tip step="type" /></div>
+              </>
+            )}
             {step === "employment" && <EmploymentStep type={type} value={emp} onPick={(id) => update({ emp: id })} />}
             {step === "details" && (
+              <>
+              <div className="mb-8"><Tip step="details" /></div>
               <DetailsStep
                 type={type}
                 emp={emp}
@@ -395,6 +426,7 @@ export default function Search() {
                   navigate(`/offers?${q}`);
                 }}
               />
+              </>
             )}
           </div>
         </div>
