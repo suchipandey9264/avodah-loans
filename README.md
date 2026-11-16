@@ -2,18 +2,24 @@
 
 ```
 frontend/   React 19 + Vite + Tailwind CSS v4 + React Router, GSAP + Lenis
-backend/    Node + Express + Mongoose (MongoDB) API: lenders, offer matching, OTP login, dashboard data, lead forms
+backend/    Node + Express + PostgreSQL (Drizzle ORM) API: lenders, offer matching, OTP login, dashboard data, lead forms
 ```
 
 ```bash
 npm run install:all   # installs both
-npm --prefix backend run seed   # loads the lender catalogue into MongoDB (safe to re-run)
+npm --prefix backend run seed   # creates the tables (migrations) and loads the lender catalogue into PostgreSQL (safe to re-run)
 npm run dev:backend   # API on http://localhost:4000   (terminal 1)
 npm run dev:frontend  # site on http://localhost:5173  (terminal 2) — /api is proxied to the backend
 npm run build         # builds frontend/dist
 ```
 
-Backend config lives in `backend/.env` (copy from `backend/.env.example`): `MONGO_DB_URI`, `MONGO_DB_NAME` (default `avodahloans`), `PORT`, `CORS_ORIGIN`, `OTP_DEMO`. Mongoose models are in `backend/src/models/index.js`: Lender, User, Otp, Session, Activity, Application, Lead.
+Backend config lives in `backend/.env` (copy from `backend/.env.example`): `DATABASE_URL` (PostgreSQL connection string — hosted databases need `?sslmode=require`), `PORT`, `CORS_ORIGIN`, `OTP_DEMO`, `TURNSTILE_SECRET_KEY`, `TRUST_PROXY`.
+
+### Database (PostgreSQL + Drizzle)
+- Tables are defined in `backend/src/db/schema.js`: lenders, users, otps, sessions, activities, applications, leads. Free-form data (profile, activity lists, offer details, lender products) is stored as JSONB.
+- The server applies pending migrations from `backend/drizzle/` on start. After changing the schema: `npm --prefix backend run db:generate` (writes a new SQL migration), then restart or run `db:migrate`.
+- `npm --prefix backend run db:studio` opens Drizzle Studio to browse the data.
+- Expired OTPs and sessions are deleted every 30 minutes (PostgreSQL has no TTL indexes).
 
 ## API (`backend/src/routes/`)
 | Method & path | What it does |
