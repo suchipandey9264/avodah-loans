@@ -1,5 +1,7 @@
 import { createHash } from "node:crypto";
-import { Session, User } from "../models/index.js";
+import { and, eq, gt } from "drizzle-orm";
+import { sessions, users } from "../db/schema.js";
+import { db } from "./db.js";
 
 export class HttpError extends Error {
   /** `extra.fields` maps field names to messages (set by validate.parse). */
@@ -19,10 +21,15 @@ export async function session(req, _res, next) {
   const token = req.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!token) return next();
   const tokenHash = sha256(token);
-  const s = await Session.findOne({ tokenHash, expiresAt: { $gt: new Date() } }).lean();
-  if (s) {
+  const [row] = await db
+    .select({ user: users })
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(and(eq(sessions.tokenHash, tokenHash), gt(sessions.expiresAt, new Date())))
+    .limit(1);
+  if (row) {
     req.tokenHash = tokenHash;
-    req.user = await User.findById(s.user).lean();
+    req.user = row.user;
   }
   next();
 }

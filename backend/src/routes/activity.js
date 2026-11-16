@@ -1,16 +1,19 @@
 import { randomBytes } from "node:crypto";
+import { desc, eq, sql } from "drizzle-orm";
 import { Router } from "express";
-import { HttpError, requireUser } from "../lib/http.js";
+import { ACTIVITY_LISTS, activities, applications, leads, users } from "../db/schema.js";
 import { requireCaptcha } from "../lib/captcha.js";
+import { db } from "../lib/db.js";
+import { HttpError, requireUser } from "../lib/http.js";
 import { leadLimiter } from "../lib/limits.js";
 import { activityItemBody, activityPut, applicationBody, callbackLead, creditLead, parse, profilePatch } from "../lib/validate.js";
-import { ACTIVITY_LISTS, Activity, Application, Lead, User } from "../models/index.js";
 
 // Per-user dashboard data (replaces the browser-only store in frontend/src/lib/activity.js)
 // plus public lead forms (callback, credit report).
 
 const r = Router();
 const MAX_ITEMS = 100;
+const json = (value) => sql`${JSON.stringify(value)}::jsonb`;
 
 const toApp = (a) => ({
   ...a.details,
@@ -19,37 +22,44 @@ const toApp = (a) => ({
   status: a.status, ts: new Date(a.createdAt).getTime(),
 });
 
+const userApplications = (userId) =>
+  db.select().from(applications).where(eq(applications.userId, userId)).orderBy(desc(applications.createdAt));
+
 async function dashboard(userId) {
-  const [act, apps, user] = await Promise.all([
-    Activity.findOne({ user: userId }).lean(),
-    Application.find({ user: userId }).sort({ createdAt: -1 }).lean(),
-    User.findById(userId, "profile").lean(),
+  const [[act], apps, [user]] = await Promise.all([
+    db.select().from(activities).where(eq(activities.userId, userId)).limit(1),
+    userApplications(userId),
+    db.select({ profile: users.profile }).from(users).where(eq(users.id, userId)).limit(1),
   ]);
   const out = Object.fromEntries(ACTIVITY_LISTS.map((k) => [k, act?.[k] ?? []]));
   return { ...out, applications: apps.map(toApp), profile: user?.profile ?? {} };
 }
 
+/** Prepends `item` to one activity list, keeping the newest MAX_ITEMS. */
 const pushItem = (userId, list, item) =>
-  Activity.updateOne(
-    { user: userId },
-    { $push: { [list]: { $each: [item], $position: 0, $slice: MAX_ITEMS } } },
-    { upsert: true }
-  );
+  db
+    .insert(activities)
+    .values({ userId, [list]: [item] })
+    .onConflictDoUpdate({
+      target: activities.userId,
+      set: { [list]: sql`jsonb_path_query_array(jsonb_build_array(${json(item)}) || ${activities[list]}, ${`$[0 to ${MAX_ITEMS - 1}]`}::jsonpath)` },
+    });
 
 /* ---------- logged-in user ---------- */
 
 r.get("/me/activity", requireUser, async (req, res) => {
-  res.json(await dashboard(req.user._id));
+  res.json(await dashboard(req.user.id));
 });
 
 /** PUT /api/me/activity — replace activity lists (e.g. merge guest activity from the browser after login). */
 r.put("/me/activity", requireUser, async (req, res) => {
   const body = parse(activityPut, req.body);
-  const $set = {};
-  for (const k of ACTIVITY_LISTS) if (body[k]) $set[k] = body[k];
-  if (Object.keys($set).length) await Activity.updateOne({ user: req.user._id }, { $set }, { upsert: true });
-  if (body.profile) await setProfile(req.user._id, body.profile);
-  res.json(await dashboard(req.user._id));
+  const lists = Object.fromEntries(ACTIVITY_LISTS.filter((k) => body[k]).map((k) => [k, body[k]]));
+  if (Object.keys(lists).length) {
+    await db.insert(activities).values({ userId: req.user.id, ...lists }).onConflictDoUpdate({ target: activities.userId, set: lists });
+  }
+  if (body.profile) await setProfile(req.user.id, body.profile);
+  res.json(await dashboard(req.user.id));
 });
 
 /** POST /api/me/activity/:list — prepend one item (search, saved offer, compare, …). */
@@ -57,20 +67,20 @@ r.post("/me/activity/:list", requireUser, async (req, res) => {
   const { list } = req.params;
   if (!ACTIVITY_LISTS.includes(list)) throw new HttpError(404, "Unknown activity list");
   const item = { ...parse(activityItemBody, req.body), ts: Date.now() };
-  await pushItem(req.user._id, list, item);
+  await pushItem(req.user.id, list, item);
   res.status(201).json(item);
 });
 
+/** Shallow-merges `patch` into the user's profile (keys already validated: no dots / $ operators). */
 async function setProfile(userId, patch) {
-  const $set = {};
-  for (const [k, v] of Object.entries(patch)) $set[`profile.${k}`] = v; // keys already checked: no dots / $ operators
-  if (typeof patch.name === "string" && patch.name) $set.name = patch.name;
-  const u = await User.findByIdAndUpdate(userId, { $set }, { new: true, lean: true });
+  const set = { profile: sql`${users.profile} || ${json(patch)}` };
+  if (typeof patch.name === "string" && patch.name) set.name = patch.name;
+  const [u] = await db.update(users).set(set).where(eq(users.id, userId)).returning({ profile: users.profile });
   return u.profile;
 }
 
 r.patch("/me/profile", requireUser, async (req, res) => {
-  res.json({ profile: await setProfile(req.user._id, parse(profilePatch, req.body)) });
+  res.json({ profile: await setProfile(req.user.id, parse(profilePatch, req.body)) });
 });
 
 /** POST /api/applications — apply to a lender offer. */
@@ -78,19 +88,21 @@ r.post("/applications", requireUser, async (req, res) => {
   const { id, name, type, loanAmount, tenureMonths, rate, emi, emp, pincode, ...details } = parse(applicationBody, req.body);
   delete details.ref; delete details.status; delete details.ts;
   if (JSON.stringify(details).length > 8000) throw new HttpError(400, "Application details are too large");
-  const app = await Application.create({
-    ref: "AVD" + randomBytes(4).toString("hex").toUpperCase(),
-    user: req.user._id,
-    contact: { name: req.user.name, phone: req.user.phone, email: req.user.email },
-    lenderId: id, lenderName: name, type, loanAmount,
-    tenureMonths, rate, emi, emp, pincode, details,
-  });
-  res.status(201).json(toApp(app.toObject()));
+  const [app] = await db
+    .insert(applications)
+    .values({
+      ref: "AVD" + randomBytes(4).toString("hex").toUpperCase(),
+      userId: req.user.id,
+      contact: { name: req.user.name, phone: req.user.phone, email: req.user.email },
+      lenderId: id, lenderName: name, type, loanAmount,
+      tenureMonths, rate, emi, emp, pincode, details,
+    })
+    .returning();
+  res.status(201).json(toApp(app));
 });
 
 r.get("/applications", requireUser, async (req, res) => {
-  const apps = await Application.find({ user: req.user._id }).sort({ createdAt: -1 }).lean();
-  res.json(apps.map(toApp));
+  res.json((await userApplications(req.user.id)).map(toApp));
 });
 
 /* ---------- public lead forms (rate-limited + captcha) ---------- */
@@ -98,8 +110,8 @@ r.get("/applications", requireUser, async (req, res) => {
 function lead(kind, list, schema) {
   return async (req, res) => {
     const { name, phone, email, message, ...details } = parse(schema, req.body);
-    await Lead.create({ kind, name, phone, email, message, details, user: req.user?._id });
-    if (req.user) await pushItem(req.user._id, list, { name, ts: Date.now() });
+    await db.insert(leads).values({ kind, name, phone, email, message, details, userId: req.user?.id });
+    if (req.user) await pushItem(req.user.id, list, { name, ts: Date.now() });
     // TODO: notify the sales team / CRM here.
     res.status(201).json({ ok: true });
   };

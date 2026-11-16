@@ -1,7 +1,6 @@
 import cors from "cors";
 import express from "express";
-import mongoose from "mongoose";
-import { connectDB } from "./lib/db.js";
+import { connectDB, pool } from "./lib/db.js";
 import { HttpError, session } from "./lib/http.js";
 import { captchaEnabled } from "./lib/captcha.js";
 import { apiLimiter } from "./lib/limits.js";
@@ -20,7 +19,10 @@ app.use(express.json({ limit: "100kb" }));
 app.use("/api", apiLimiter);
 app.use(session);
 
-app.get("/api/health", (_req, res) => res.json({ ok: true, db: mongoose.connection.readyState === 1 }));
+app.get("/api/health", async (_req, res) => {
+  const db = await pool.query("select 1").then(() => true, () => false);
+  res.json({ ok: true, db });
+});
 app.use("/api", loans);
 app.use("/api/auth", auth);
 app.use("/api", activity);
@@ -31,8 +33,10 @@ app.use("/api", (_req, _res, next) => next(new HttpError(404, "Not found")));
 app.use((err, _req, res, _next) => {
   let status = err.status ?? 500;
   let message = err.message;
-  if (err instanceof mongoose.Error.ValidationError || err instanceof mongoose.Error.CastError) status = 400;
-  if (err.code === 11000) { status = 409; message = "Already exists"; }
+  // PostgreSQL errors (Drizzle wraps them; the driver's error is in err.cause)
+  const pgCode = err.cause?.code ?? err.code;
+  if (pgCode === "23505") { status = 409; message = "Already exists"; } // unique violation
+  if (pgCode === "23503" || pgCode === "23514" || pgCode === "22P02") { status = 400; message = "Invalid request"; } // foreign key, check, bad uuid
   if (err.type === "entity.parse.failed") { status = 400; message = "Invalid JSON"; }
   if (err.type === "entity.too.large") { status = 413; message = "Request is too large"; }
   if (status >= 500) console.error(err);
@@ -46,6 +50,6 @@ try {
     if (!captchaEnabled) console.warn("[captcha] TURNSTILE_SECRET_KEY is not set — captcha checks are OFF");
   });
 } catch (err) {
-  console.error("Could not connect to MongoDB:", err.message);
+  console.error("Could not start — PostgreSQL error:", err.cause?.message ?? err.message);
   process.exit(1);
 }
