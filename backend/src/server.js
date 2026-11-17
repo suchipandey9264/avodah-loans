@@ -19,6 +19,9 @@ app.use(express.json({ limit: "100kb" }));
 app.use("/api", apiLimiter);
 app.use(session);
 
+// This server is only the API; send anyone who opens it in a browser to the website.
+app.get("/", (_req, res) => res.redirect(origins[0]));
+
 app.get("/api/health", async (_req, res) => {
   const db = await pool.query("select 1").then(() => true, () => false);
   res.json({ ok: true, db });
