@@ -228,7 +228,6 @@ export default function HomeHero() {
 
         // Scroll parallax: each layer moves at its own speed
         const st = { trigger: root.current, start: "top top", end: "bottom top", scrub: true };
-        gsap.to(".hero-copy", { y: -80, ease: "none", scrollTrigger: st });
         gsap.to(".deck-layer", { y: 90, scale: 1.06, ease: "none", scrollTrigger: st });
         gsap.to(".deck-glow", { yPercent: 18, ease: "none", scrollTrigger: st });
         gsap.to(".hero-float-a", { y: -200, ease: "none", scrollTrigger: st });
@@ -240,7 +239,7 @@ export default function HomeHero() {
     { scope: root }
   );
 
-  // Mouse parallax: the deck tilts toward the pointer, the copy and floating cards drift at different depths.
+  // Mouse parallax: the deck tilts toward the pointer, the floating cards drift at different depths. The copy stays still.
   const onMove = (e) => {
     if (e.pointerType !== "mouse" || prefersReducedMotion()) return;
     const r = e.currentTarget.getBoundingClientRect();
@@ -248,16 +247,15 @@ export default function HomeHero() {
     const y = (e.clientY - r.top) / r.height - 0.5;
     const q = (sel, vars) => gsap.to(root.current.querySelector(sel), { duration: 0.8, ease: "power3.out", overwrite: "auto", ...vars });
     q(".deck-tilt", { rotateY: x * 9, rotateX: -y * 7 });
-    q(".hero-copy-inner", { x: -x * 18, y: -y * 12 });
     q(".hero-float-a .hero-float-shift", { x: x * 34, y: y * 24 });
     q(".hero-float-b .hero-float-shift", { x: x * 22, y: y * 16 });
   };
   const onLeave = () => {
-    gsap.to(root.current.querySelectorAll(".deck-tilt, .hero-copy-inner, .hero-float-shift"), { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 1, ease: "power3.out" });
+    gsap.to(root.current.querySelectorAll(".deck-tilt, .hero-float-shift"), { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 1, ease: "power3.out" });
   };
 
   return (
-    <section ref={root} className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-[#f3eefd] to-paper pt-10 pb-16 sm:pt-14">
+    <section ref={root} className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-[#f3eefd] to-paper pt-6 pb-10 sm:pt-8">
       <div className="hero-orb pointer-events-none absolute -top-40 -left-40 size-[520px] rounded-full bg-brand-200/60 blur-[120px]" />
       <div className="hero-orb pointer-events-none absolute top-20 right-[-10%] size-[460px] rounded-full bg-flame-100 blur-[120px]" />
 

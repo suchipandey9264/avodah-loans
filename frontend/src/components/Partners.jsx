@@ -40,7 +40,7 @@ export default function Partners() {
 
   return (
     <section ref={root} aria-labelledby="partners-title" className="container-x py-6">
-      <div className="flex flex-col gap-4 rounded-3xl border border-line bg-white p-4 sm:p-5 lg:flex-row lg:items-center">
+      <div className="flex flex-col gap-4 rounded-3xl border border-line bg-white p-5 sm:p-6 lg:flex-row lg:items-center">
         <div className="flex items-center justify-between gap-4 lg:w-60 lg:shrink-0 lg:border-r lg:border-line lg:pr-5">
           <h2 id="partners-title" className="text-lg leading-tight font-bold">
             Compare offers from <span className="text-brand-700">India’s leading lenders</span>
@@ -55,7 +55,7 @@ export default function Partners() {
         <div className="min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_6%,black_94%,transparent)]" aria-hidden="true">
           <div className="marquee-row flex w-max gap-3">
             {[...PARTNER_LOGOS, ...PARTNER_LOGOS].map(([file, name], i) => (
-              <div key={i} className="flex h-14 shrink-0 items-center gap-2 rounded-xl border border-line bg-white px-4">
+              <div key={i} className="flex h-16 shrink-0 items-center gap-2 rounded-xl border border-line bg-white px-4">
                 <img src={`/bank-logos/${file}.png`} alt="" loading="lazy" className="h-8 w-12 object-contain" />
                 <span className="text-sm font-semibold whitespace-nowrap">{name}</span>
               </div>

@@ -26,7 +26,7 @@ export default function Lenders() {
   );
 
   return (
-    <div className="bg-gradient-to-b from-brand-50 to-paper pb-24">
+    <div className="bg-gradient-to-b from-brand-50 to-paper pb-16">
       <section className="container-x pt-12 sm:pt-16">
         <p className="eyebrow" data-reveal>{LENDERS.length} lending partners</p>
         <h1 className="mt-4 max-w-3xl text-5xl leading-[1.02] font-extrabold sm:text-6xl" data-reveal>

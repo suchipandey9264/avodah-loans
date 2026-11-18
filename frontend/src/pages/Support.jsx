@@ -48,7 +48,7 @@ export default function Support() {
 
   return (
     <div ref={root}>
-      <section className="relative overflow-hidden bg-brand-900 pt-16 pb-28 text-white">
+      <section className="relative overflow-hidden bg-brand-900 pt-12 pb-20 text-white">
         <div className="grain-grid pointer-events-none absolute inset-0 opacity-40" />
         <div className="pointer-events-none absolute -top-24 right-0 size-96 rounded-full bg-brand-500/40 blur-[100px]" />
         <div className="container-x relative text-center">
@@ -90,7 +90,7 @@ export default function Support() {
         </ul>
       </section>
 
-      <section className="py-20">
+      <section className="py-14">
         <div className="container-x grid gap-10 lg:grid-cols-[260px_1fr]">
           <nav aria-label="Help topics" className="lg:sticky lg:top-24 lg:self-start">
             <ul className="no-scrollbar flex gap-2 overflow-x-auto lg:grid lg:gap-1">
@@ -117,7 +117,7 @@ export default function Support() {
         </div>
       </section>
 
-      <section className="px-3 pb-24 sm:px-5">
+      <section className="px-3 pb-16 sm:px-5">
         <div className="mx-auto max-w-7xl rounded-[28px] bg-brand-800 p-8 text-white sm:p-12" data-reveal>
           <div className="grid gap-8 lg:grid-cols-[1fr_1.4fr] lg:items-center">
             <div>

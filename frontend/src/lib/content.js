@@ -8,13 +8,6 @@ export const NAV_LINKS = [
   { label: "FAQ", id: "faq" },
 ];
 
-export const HERO_STATS = [
-  { value: 2.4, prefix: "", suffix: "L+", decimals: 1, label: "Happy customers" },
-  { value: 50, prefix: "", suffix: "+", decimals: 0, label: "Lending partners" },
-  { value: 8200, prefix: "₹", suffix: " Cr+", decimals: 0, label: "Loans disbursed" },
-  { value: 7.1, prefix: "", suffix: "%", decimals: 1, label: "Lowest rate offered" },
-];
-
 export const CATEGORIES = [
   { icon: "House", title: "Home Loan", note: "Best rates" },
   { icon: "Briefcase", title: "Business Loan", note: "Available now" },

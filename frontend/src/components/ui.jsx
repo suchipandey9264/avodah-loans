@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import {
   House, Briefcase, User, Car, GraduationCap, LandPlot, CreditCard, HeartPulse, Search, Zap,
   Handshake, ShieldCheck, ClipboardCheck, Scale, BadgeCheck, FileUp, Banknote, ArrowRight,
@@ -9,7 +8,6 @@ import {
   ArrowLeft, Wallet, Heart, LayoutDashboard, History, FileText, Trash2, RotateCcw, Activity,
   ExternalLink, UserRound, Laptop, IndianRupee, CalendarDays, Building, AtSign, KeyRound, ListFilter,
 } from "lucide-react";
-import { gsap, useGSAP, MOTION_OK } from "../lib/motion";
 
 const Icons = {
   House, Briefcase, User, Car, GraduationCap, LandPlot, CreditCard, HeartPulse, Search, Zap,
@@ -68,64 +66,27 @@ export function SplitWords({ text, className = "", wordClassName = "" }) {
   );
 }
 
-const inr = new Intl.NumberFormat("en-IN");
-
-/** Count-up number driven by ScrollTrigger; screen readers get the final value. */
-export function Counter({ value, prefix = "", suffix = "", decimals = 0, className = "" }) {
-  const ref = useRef(null);
-  const format = (n) =>
-    prefix + (decimals ? n.toFixed(decimals) : inr.format(Math.round(n))) + suffix;
-
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add(MOTION_OK, () => {
-        const el = ref.current;
-        const obj = { v: 0 };
-        el.textContent = format(0);
-        gsap.to(obj, {
-          v: value,
-          duration: 1.8,
-          ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top bottom", once: true },
-          onUpdate: () => (el.textContent = format(obj.v)),
-        });
-      });
-      return () => mm.revert();
-    },
-    { dependencies: [value] }
-  );
-
-  return (
-    <span className={className}>
-      <span className="sr-only">{format(value)}</span>
-      <span ref={ref} aria-hidden="true" className="tabular-nums">
-        {format(value)}
-      </span>
-    </span>
-  );
-}
-
-export function SectionHeading({ eyebrow, title, sub, align = "left", dark = false }) {
+export function SectionHeading({ eyebrow, title, sub, align = "left", dark = false, reveal = true }) {
   const center = align === "center";
+  const r = reveal || undefined; // undefined drops the attribute, so the scroll fade-in skips it
   return (
     <div className={`max-w-2xl ${center ? "mx-auto text-center" : ""}`} data-reveal-group>
       {eyebrow && (
         <p
           className={`eyebrow ${dark ? "border-white/15 bg-white/5 text-flame-400" : ""}`}
-          data-reveal
+          data-reveal={r}
         >
           {eyebrow}
         </p>
       )}
       <h2
-        className={`mt-4 text-4xl leading-[1.05] font-bold sm:text-5xl ${dark ? "text-white" : "text-ink"}`}
-        data-reveal
+        className={`${eyebrow ? "mt-4" : ""} text-4xl leading-[1.05] font-bold sm:text-5xl ${dark ? "text-white" : "text-ink"}`}
+        data-reveal={r}
       >
         {title}
       </h2>
       {sub && (
-        <p className={`mt-4 text-lg ${dark ? "text-brand-200" : "text-muted"}`} data-reveal>
+        <p className={`mt-4 text-lg ${dark ? "text-brand-200" : "text-muted"}`} data-reveal={r}>
           {sub}
         </p>
       )}

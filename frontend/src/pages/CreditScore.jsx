@@ -156,7 +156,7 @@ export default function CreditScore() {
 
   return (
     <div ref={root}>
-      <section className="bg-gradient-to-b from-brand-50 to-paper pt-12 pb-20 sm:pt-16">
+      <section className="bg-gradient-to-b from-brand-50 to-paper pt-10 pb-14 sm:pt-12">
         <div className="container-x grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-start">
           <div>
             <p className="cs-anim eyebrow">Free credit score</p>
@@ -190,7 +190,7 @@ export default function CreditScore() {
         </div>
       </section>
 
-      <section className="py-20">
+      <section className="py-14">
         <div className="container-x">
           <SectionHeading eyebrow="Improve your score" title="Four habits that move your score up." />
           <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-stagger>

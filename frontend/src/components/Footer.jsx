@@ -11,8 +11,8 @@ const COLS = [
 
 export default function Footer() {
   return (
-    <footer className="relative overflow-hidden bg-brand-950 pt-20 text-white">
-      <div className="container-x grid gap-12 pb-16 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    <footer className="relative overflow-hidden bg-brand-950 pt-12 text-white">
+      <div className="container-x grid gap-10 pb-12 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <Logo tone="light" className="h-10" />
           <p className="mt-5 max-w-xs text-brand-200">Search, compare and apply for loans from 50+ banks & NBFCs — free, fast and fully digital.</p>
@@ -27,7 +27,7 @@ export default function Footer() {
             <h2 className="font-display text-sm font-semibold tracking-widest text-flame-400 uppercase">{c.title}</h2>
             <ul className="mt-4 grid gap-1 text-sm">
               {c.links.map(([label, to]) => (
-                <li key={label}><Link to={to} className="inline-flex min-h-8 items-center text-brand-200 transition-colors hover:text-white">{label}</Link></li>
+                <li key={label}><Link to={to} className="inline-flex min-h-8 items-center text-brand-200 hover:text-white">{label}</Link></li>
               ))}
             </ul>
           </nav>

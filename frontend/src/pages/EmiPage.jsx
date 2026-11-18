@@ -7,7 +7,7 @@ export default function EmiPage() {
   return (
     <div className="bg-gradient-to-b from-brand-50 to-paper">
       <EmiCalculator />
-      <section className="container-x pb-24">
+      <section className="container-x pb-16">
         <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
           <div className="rounded-3xl border border-line bg-white p-7" data-reveal>
             <h2 className="text-2xl font-bold">How EMI is calculated</h2>
