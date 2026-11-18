@@ -1,38 +1,17 @@
-import { useRef } from "react";
 import { TESTIMONIALS } from "../lib/content";
-import { gsap, useGSAP, MOTION_OK } from "../lib/motion";
 import { Icon, SectionHeading } from "./ui";
 
 export default function Testimonials() {
-  const root = useRef(null);
-
-  useGSAP(
-    () => {
-      const mm = gsap.matchMedia();
-      mm.add(`${MOTION_OK} and (min-width: 768px)`, () => {
-        // Columns drift at different speeds for depth.
-        gsap.utils.toArray(".testi-card").forEach((card, i) => {
-          gsap.fromTo(card, { y: [80, 0, 140][i] ?? 60 }, {
-            y: [-40, 40, -20][i] ?? 0,
-            ease: "none",
-            scrollTrigger: { trigger: root.current, start: "top bottom", end: "bottom top", scrub: true },
-          });
-        });
-      });
-      return () => mm.revert();
-    },
-    { scope: root }
-  );
-
   return (
-    <section ref={root} className="overflow-hidden bg-brand-50 py-24 sm:py-32">
+    <section className="overflow-hidden bg-brand-50 py-10 sm:py-14">
       <div className="container-x">
         <SectionHeading
           eyebrow="Customer stories"
           title="2,40,000+ customers. Real savings."
           sub="People who secured their dream home, grew their business and planned their future."
+          reveal={false}
         />
-        <ul className="mt-16 grid gap-5 md:grid-cols-3">
+        <ul className="mt-10 grid gap-5 md:grid-cols-3">
           {TESTIMONIALS.map((t, i) => (
             <li key={t.name} className={`testi-card relative flex flex-col rounded-3xl p-7 ${i === 1 ? "bg-brand-700 text-white" : "bg-white"}`}>
               <Icon name="Quote" size={40} className={`${i === 1 ? "text-flame-400" : "text-brand-200"}`} />

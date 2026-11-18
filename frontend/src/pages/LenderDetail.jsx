@@ -92,7 +92,7 @@ export default function LenderDetail() {
   const maxLoan = Math.max(...lender.products.map((p) => p.maxAmount));
 
   return (
-    <div ref={root} key={id} className="bg-paper pb-24">
+    <div ref={root} key={id} className="bg-paper pb-16">
       <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-paper pt-8 pb-12">
         <div className="pointer-events-none absolute -top-32 right-0 size-96 rounded-full bg-brand-200/50 blur-[100px]" />
         <div className="container-x relative">

@@ -138,18 +138,18 @@
 .emi-range {
   -webkit-appearance: none;
   appearance: none;
-  height: 8px;
+  height: 6px;
   border-radius: 999px;
   background: linear-gradient(to right, var(--color-brand-700) var(--pct), var(--color-brand-100) var(--pct));
   outline-offset: 6px;
 }
 .emi-range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: white;
-  border: 6px solid var(--color-flame-500);
+  border: 5px solid var(--color-flame-500);
   box-shadow: 0 4px 12px rgb(70 32 141 / 0.3);
   cursor: grab;
   transition: transform 150ms ease-out;
@@ -159,11 +159,11 @@
   cursor: grabbing;
 }
 .emi-range::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: white;
-  border: 6px solid var(--color-flame-500);
+  border: 5px solid var(--color-flame-500);
   box-shadow: 0 4px 12px rgb(70 32 141 / 0.3);
   cursor: grab;
 }

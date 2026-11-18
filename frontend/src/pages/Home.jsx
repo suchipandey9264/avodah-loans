@@ -1,5 +1,5 @@
 import HomeHero from "../components/HomeHero";
-import { LoanProducts, StatsStrip } from "../components/HomeSections";
+import { LoanProducts } from "../components/HomeSections";
 import Partners from "../components/Partners";
 import HowItWorks from "../components/HowItWorks";
 import EmiCalculator from "../components/EmiCalculator";
@@ -12,7 +12,6 @@ export default function Home() {
   return (
     <>
       <HomeHero />
-      <StatsStrip />
       <LoanProducts />
       <Partners />
       <HowItWorks />
