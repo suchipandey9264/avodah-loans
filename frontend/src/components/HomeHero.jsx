@@ -128,8 +128,9 @@ function PhotoDeck({ typeId, onPick }) {
   useEffect(() => {
     if (first.current) { first.current = false; return; }
     if (prefersReducedMotion()) return;
-    const el = wrap.current?.querySelector(`[data-card="${typeId}"] .deck-inner`);
-    if (el) gsap.fromTo(el, { rotateY: -32, y: -24, scale: 0.92 }, { rotateY: 0, y: 0, scale: 1, duration: 1, ease: "expo.out", clearProps: "transform" });
+    // Flip the photo inside the card, not .deck-inner, whose CSS transform transition would fight the tween.
+    const el = wrap.current?.querySelector(`[data-card="${typeId}"] .deck-inner > span`);
+    if (el) gsap.fromTo(el, { rotateY: -24, scale: 0.94, transformPerspective: 1200 }, { rotateY: 0, scale: 1, duration: 0.45, ease: "expo.out", clearProps: "transform" });
   }, [typeId]);
 
   return (
@@ -141,7 +142,7 @@ function PhotoDeck({ typeId, onPick }) {
             key={id}
             src={HERO[id].src}
             alt=""
-            className={`absolute inset-0 m-auto h-full w-3/4 rounded-full object-cover blur-[90px] saturate-150 transition-opacity duration-1000 ${id === typeId ? "opacity-60" : "opacity-0"}`}
+            className={`absolute inset-0 m-auto h-full w-3/4 rounded-full object-cover blur-[90px] saturate-150 transition-opacity duration-500 ${id === typeId ? "opacity-60" : "opacity-0"}`}
           />
         ))}
       </div>
@@ -159,7 +160,7 @@ function PhotoDeck({ typeId, onPick }) {
             <div
               key={id}
               data-card={id}
-              className="deck-card absolute top-1/2 left-1/2 aspect-[4/5] h-full max-w-[94%] [transition:transform_0.9s_cubic-bezier(0.16,1,0.3,1),opacity_0.6s_ease]"
+              className="deck-card absolute top-1/2 left-1/2 aspect-[4/5] h-full max-w-[94%] [transition:transform_0.45s_cubic-bezier(0.16,1,0.3,1),opacity_0.3s_ease]"
               style={{
                 transform: `translate(-50%, -50%) translateX(${dir * f.x}%) rotate(${dir * f.r}deg) scale(${f.s})`,
                 zIndex: 20 - Math.abs(signed) * 4,
@@ -185,11 +186,11 @@ function PhotoDeck({ typeId, onPick }) {
                     alt={front ? HERO[id].alt : ""}
                     decoding="async"
                     fetchPriority={id === "home" ? "high" : "auto"}
-                    className={`size-full object-cover transition-transform duration-[2.5s] ease-out-expo ${front ? "scale-100" : "scale-110"}`}
+                    className={`size-full object-cover transition-transform duration-700 ease-out-expo ${front ? "scale-100" : "scale-110"}`}
                   />
                   {/* Bottom shade for the caption; peeking cards are dimmed slightly */}
-                  <span className={`absolute inset-0 transition-colors duration-500 ${front ? "bg-gradient-to-t from-brand-950/75 via-brand-950/10 via-35% to-transparent" : "bg-brand-950/20"}`} />
-                  <span className={`absolute inset-x-0 bottom-0 flex items-center gap-3 p-4 text-left text-white transition-opacity duration-500 ${front ? "opacity-100" : "opacity-0"}`}>
+                  <span className={`absolute inset-0 transition-colors duration-300 ${front ? "bg-gradient-to-t from-brand-950/75 via-brand-950/10 via-35% to-transparent" : "bg-brand-950/20"}`} />
+                  <span className={`absolute inset-x-0 bottom-0 flex items-center gap-3 p-4 text-left text-white transition-opacity duration-300 ${front ? "opacity-100" : "opacity-0"}`}>
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-md"><Icon name={t.icon} size={18} /></span>
                     <span className="leading-tight">
                       <span className="block font-display text-base font-bold">{t.label}</span>
@@ -217,12 +218,13 @@ export default function HomeHero() {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
         const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-        // Deal the cards in from below, back to front, then bring in the copy on top
-        tl.from(".deck-inner", { y: 160, rotate: (i) => (i % 2 ? 14 : -14), autoAlpha: 0, duration: 1.1, stagger: { each: 0.07, from: "end" }, clearProps: "transform,opacity,visibility" })
-          .from(".hero-title .word-mask > span", { yPercent: 110, duration: 1.1, stagger: 0.05 }, 0.35)
-          .from(".hero-sub, .hero-trust > li", { y: 20, autoAlpha: 0, duration: 0.8, stagger: 0.07 }, "-=0.8")
-          .from(".hero-float", { y: 30, autoAlpha: 0, scale: 0.9, duration: 0.9, stagger: 0.12, ease: "back.out(1.6)" }, "-=0.9")
-          .from(".hero-search", { y: 40, autoAlpha: 0, duration: 1 }, "-=1");
+        // The deck fades in as one piece, already fanned. Animating each .deck-inner fought its CSS hover
+        // transition on `transform` and left cards stuck at odd angles while the photos were still loading.
+        tl.from(".deck-tilt", { autoAlpha: 0, y: 24, scale: 0.96, duration: 0.45, ease: "power3.out" })
+          .from(".hero-title .word-mask > span", { yPercent: 110, duration: 0.6, stagger: 0.03 }, 0.05)
+          .from(".hero-sub, .hero-trust > li", { y: 16, autoAlpha: 0, duration: 0.4, stagger: 0.04 }, 0.15)
+          .from(".hero-float", { y: 20, autoAlpha: 0, duration: 0.4, stagger: 0.06, ease: "power3.out" }, 0.2)
+          .from(".hero-search", { y: 24, autoAlpha: 0, duration: 0.45 }, 0.15);
 
         gsap.to(".hero-float-inner", { y: -8, duration: 2.4, yoyo: true, repeat: -1, ease: "sine.inOut", stagger: 0.6 });
 
@@ -245,13 +247,13 @@ export default function HomeHero() {
     const r = e.currentTarget.getBoundingClientRect();
     const x = (e.clientX - r.left) / r.width - 0.5;
     const y = (e.clientY - r.top) / r.height - 0.5;
-    const q = (sel, vars) => gsap.to(root.current.querySelector(sel), { duration: 0.8, ease: "power3.out", overwrite: "auto", ...vars });
+    const q = (sel, vars) => gsap.to(root.current.querySelector(sel), { duration: 0.5, ease: "power3.out", overwrite: "auto", ...vars });
     q(".deck-tilt", { rotateY: x * 9, rotateX: -y * 7 });
     q(".hero-float-a .hero-float-shift", { x: x * 34, y: y * 24 });
     q(".hero-float-b .hero-float-shift", { x: x * 22, y: y * 16 });
   };
   const onLeave = () => {
-    gsap.to(root.current.querySelectorAll(".deck-tilt, .hero-float-shift"), { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 1, ease: "power3.out" });
+    gsap.to(root.current.querySelectorAll(".deck-tilt, .hero-float-shift"), { x: 0, y: 0, rotateX: 0, rotateY: 0, duration: 0.6, ease: "power3.out" });
   };
 
   return (
