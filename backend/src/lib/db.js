@@ -8,7 +8,13 @@ import * as schema from "../db/schema.js";
 const MIGRATIONS = fileURLToPath(new URL("../../drizzle", import.meta.url));
 
 // Hosted databases (Neon, Supabase, Render external URLs) need SSL — add ?sslmode=require to DATABASE_URL.
-export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: Number(process.env.PG_POOL_MAX ?? 10) });
+// Keep idle connections for 5 minutes (pg's default is 10s): reconnecting to a far-away database costs ~1s of TLS + auth.
+export const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: Number(process.env.PG_POOL_MAX ?? 10),
+  idleTimeoutMillis: 5 * 60 * 1000,
+  keepAlive: true,
+});
 pool.on("error", (err) => console.error("[db] idle connection error:", err.message));
 export const db = drizzle(pool, { schema });
 

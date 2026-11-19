@@ -119,8 +119,11 @@ r.get("/applications", requireUser, async (req, res) => {
 function lead(kind, list, schema) {
   return async (req, res) => {
     const { name, phone, email, message, ...details } = parse(schema, req.body);
-    await db.insert(leads).values({ kind, name, phone, email, message, details, userId: req.user?.id });
-    if (req.user) await pushItem(req.user.id, list, { name, ts: Date.now() });
+    // Independent writes: run them together (each is a network round trip to the database).
+    await Promise.all([
+      db.insert(leads).values({ kind, name, phone, email, message, details, userId: req.user?.id }),
+      req.user && pushItem(req.user.id, list, { name, ts: Date.now() }),
+    ]);
     // TODO: notify the sales team / CRM here.
     res.status(201).json({ ok: true });
   };
