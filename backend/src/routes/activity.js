@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { desc, eq, sql } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { Router } from "express";
 import { ACTIVITY_LISTS, activities, applications, leads, users } from "../db/schema.js";
 import { requireCaptcha } from "../lib/captcha.js";
@@ -75,7 +75,14 @@ r.post("/me/activity/:list", requireUser, async (req, res) => {
 async function setProfile(userId, patch) {
   const set = { profile: sql`${users.profile} || ${json(patch)}` };
   if (typeof patch.name === "string" && patch.name) set.name = patch.name;
-  const [u] = await db.update(users).set(set).where(eq(users.id, userId)).returning({ profile: users.profile });
+  // Only update while the merged profile stays small (stops one account growing its row without limit).
+  const merged = sql`${users.profile} || ${json(patch)}`;
+  const [u] = await db
+    .update(users)
+    .set(set)
+    .where(and(eq(users.id, userId), sql`(select count(*) from jsonb_object_keys(${merged})) <= 60`))
+    .returning({ profile: users.profile });
+  if (!u) throw new HttpError(400, "Profile has too many fields");
   return u.profile;
 }
 
@@ -88,6 +95,8 @@ r.post("/applications", requireUser, async (req, res) => {
   const { id, name, type, loanAmount, tenureMonths, rate, emi, emp, pincode, ...details } = parse(applicationBody, req.body);
   delete details.ref; delete details.status; delete details.ts;
   if (JSON.stringify(details).length > 8000) throw new HttpError(400, "Application details are too large");
+  const [{ n }] = await db.select({ n: count() }).from(applications).where(eq(applications.userId, req.user.id));
+  if (n >= 50) throw new HttpError(429, "You have too many applications — contact support to apply for more");
   const [app] = await db
     .insert(applications)
     .values({

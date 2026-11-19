@@ -37,7 +37,7 @@ function Slider({ label, value, min, max, step, onChange, display, minLabel, max
 
 const RING = 2 * Math.PI * 42; // circumference of the r=42 donut
 
-export default function EmiCalculator() {
+export default function EmiCalculator({ headingAs }) {
   const [amount, setAmount] = useState(5_000_000);
   const [rate, setRate] = useState(8.5);
   const [years, setYears] = useState(20);
@@ -69,11 +69,12 @@ export default function EmiCalculator() {
   );
 
   return (
-    <section id="emi" className="py-10 sm:py-14">
+    <section id="emi" className="py-8 sm:py-10">
       <div className="container-x grid gap-10 lg:grid-cols-[1fr_minmax(0,30rem)] lg:items-center lg:gap-16">
         <div>
           <SectionHeading
             eyebrow="EMI calculator"
+            as={headingAs}
             title="Know your EMI before you apply."
             sub="Drag the sliders to see your monthly instalment and total interest instantly. Plan smarter, borrow confidently."
           />

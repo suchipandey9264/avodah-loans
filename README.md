@@ -64,5 +64,6 @@ Every step lives in the URL, so the browser back button and shared links work.
 ## Before launch
 - Lender rates, limits and features in `loans.js` are **sample data** — replace with live data from the API.
 - Phone/email in `CONTACT` are placeholders from the reference repo.
-- Login OTP, eligibility, credit report, callback and "Apply" are simulated on the front end — wire them to the backend.
+- Login OTP, callback, credit report and "Apply" go to the backend. Searches, saved offers and the dashboard lists are still kept in the browser (switch them to `api.activity` / `api.syncActivity`).
+- Production `.env`: `NODE_ENV=production`, `OTP_DEMO=false` (the server refuses to start with demo OTP in production), `TRUST_PROXY=1` behind Render/Nginx, and your real `TURNSTILE_SECRET_KEY` (the `1x0000…` test key lets every captcha pass).
 - The hero photo is hot-linked from Unsplash; download it into `public/` (or use your own) for production.

@@ -9,6 +9,7 @@ const MIGRATIONS = fileURLToPath(new URL("../../drizzle", import.meta.url));
 
 // Hosted databases (Neon, Supabase, Render external URLs) need SSL — add ?sslmode=require to DATABASE_URL.
 export const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: Number(process.env.PG_POOL_MAX ?? 10) });
+pool.on("error", (err) => console.error("[db] idle connection error:", err.message));
 export const db = drizzle(pool, { schema });
 
 let purgeTimer;

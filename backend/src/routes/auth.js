@@ -1,5 +1,5 @@
 import { randomBytes, randomInt } from "node:crypto";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, gt, lt, sql } from "drizzle-orm";
 import { Router } from "express";
 import { z } from "zod";
 import { otps, sessions, users } from "../db/schema.js";
@@ -10,7 +10,8 @@ import { otpContactLimiter, otpIpLimiter, verifyLimiter } from "../lib/limits.js
 import { email, parse, phone, verifyBody } from "../lib/validate.js";
 
 const r = Router();
-const DEMO = process.env.OTP_DEMO !== "false";
+// Demo mode (any 6 digits log in) must be switched on explicitly, and is refused in production (see server.js).
+export const DEMO = process.env.OTP_DEMO === "true";
 const OTP_TTL = 5 * 60 * 1000;
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 
@@ -40,13 +41,13 @@ r.post("/verify", verifyLimiter, async (req, res) => {
 
   // Demo mode mirrors the old front-end behaviour: any 6 digits work.
   if (!DEMO) {
-    const [entry] = await db.select().from(otps).where(eq(otps.identifier, value)).limit(1);
-    if (!entry || entry.expiresAt < new Date()) throw new HttpError(400, "Code expired — request a new one");
-    if (entry.tries >= 5) throw new HttpError(429, "Too many attempts — request a new code");
-    if (entry.codeHash !== sha256(otp)) {
-      await db.update(otps).set({ tries: sql`${otps.tries} + 1` }).where(eq(otps.identifier, value));
-      throw new HttpError(400, "Incorrect code");
-    }
+    const [entry] = await db
+      .update(otps)
+      .set({ tries: sql`${otps.tries} + 1` })
+      .where(and(eq(otps.identifier, value), lt(otps.tries, 5), gt(otps.expiresAt, new Date())))
+      .returning({ codeHash: otps.codeHash });
+    if (!entry) throw new HttpError(400, "Code expired or too many attempts — request a new one");
+    if (entry.codeHash !== sha256(otp)) throw new HttpError(400, "Incorrect code");
   }
   await db.delete(otps).where(eq(otps.identifier, value));
 

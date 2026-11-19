@@ -51,7 +51,7 @@ export function CallbackForm({ stacked = false }) {
       </label>
       <label className="grid gap-1 text-sm">
         <span className="text-brand-100">Mobile number</span>
-        <input name="phone" type="tel" autoComplete="tel" aria-invalid={!!errors.phone} aria-describedby="cb-err" className="field border-white/20 bg-white/10 text-white placeholder:text-brand-300 focus:border-flame-400 focus:ring-flame-400/30" placeholder="98765 43210" />
+        <input name="phone" type="tel" autoComplete="tel-national" aria-invalid={!!errors.phone} aria-describedby="cb-err" className="field border-white/20 bg-white/10 text-white placeholder:text-brand-300 focus:border-flame-400 focus:ring-flame-400/30" placeholder="98765 43210" />
       </label>
       <button type="submit" disabled={busy} className={`btn-accent disabled:opacity-60 ${stacked ? `mt-1 w-full ${span}` : "self-end"}`}>
         {busy ? "Sending…" : <>Call me back <Icon name="PhoneCall" size={16} /></>}
@@ -66,8 +66,8 @@ const PERKS = ["100% free advice", "No impact on credit score", "50+ banks & NBF
 
 export default function Cta() {
   return (
-    <section id="contact" className="px-3 pb-10 sm:px-5 sm:pb-14">
-      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[32px] bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 px-6 py-12 text-white sm:px-10 sm:py-14 lg:px-14">
+    <section id="contact" className="px-3 pb-8 sm:px-5 sm:pb-10">
+      <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[28px] bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 px-6 py-8 text-white sm:px-10 sm:py-10 lg:px-12">
         {/* Decoration: grid texture, warm glow, concentric rings */}
         <div className="grain-grid pointer-events-none absolute inset-0 opacity-30" />
         <div className="pointer-events-none absolute -right-20 -bottom-40 size-[28rem] rounded-full bg-flame-500/25 blur-[110px]" />
@@ -77,27 +77,27 @@ export default function Cta() {
           <div className="absolute inset-24 rounded-full border border-white/5" />
         </div>
 
-        <div className="relative grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-14">
+        <div className="relative grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-center lg:gap-10">
           <div>
             <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold tracking-wide text-flame-400">
               <span className="size-1.5 rounded-full bg-flame-400" /> Apply in under 2 minutes
             </p>
-            <h2 className="mt-5 text-4xl leading-[1.05] font-extrabold sm:text-5xl">
+            <h2 className="mt-4 text-3xl leading-[1.05] font-extrabold sm:text-4xl">
               Ready to get the <span className="bg-gradient-to-r from-flame-400 to-sun-400 bg-clip-text text-transparent">best loan deal?</span>
             </h2>
-            <p className="mt-4 max-w-lg text-lg text-brand-100">
+            <p className="mt-3 max-w-lg text-base text-brand-100">
               Compare offers, check eligibility and apply — all in one place, without visiting a branch.
             </p>
 
-            <ul className="mt-6 flex flex-wrap gap-2">
+            <ul className="mt-5 flex flex-wrap gap-2">
               {PERKS.map((p) => (
-                <li key={p} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm ring-1 ring-white/10">
+                <li key={p} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[13px] ring-1 ring-white/10">
                   <Icon name="CircleCheck" size={15} className="text-flame-400" /> {p}
                 </li>
               ))}
             </ul>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/search" className="btn-accent">
                 Search Loan <Icon name="ArrowRight" size={16} />
               </Link>
@@ -106,7 +106,7 @@ export default function Cta() {
               </a>
             </div>
 
-            <div className="mt-8 flex items-center gap-3">
+            <div className="mt-6 flex items-center gap-3">
               <div className="flex -space-x-2" aria-hidden="true">
                 {TESTIMONIALS.map((t, i) => (
                   <span key={t.name} className={`grid size-9 place-items-center rounded-full font-display text-xs font-bold ring-2 ring-brand-900 ${i === 1 ? "bg-flame-400 text-ink" : "bg-brand-100 text-brand-700"}`}>
@@ -123,17 +123,17 @@ export default function Cta() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-white/15 bg-white/[0.07] p-6 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.6)] backdrop-blur-md sm:p-7">
+          <div className="rounded-2xl border border-white/15 bg-white/[0.07] p-5 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.6)] backdrop-blur-md sm:p-6">
             <div className="flex items-start gap-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-flame-500 to-sun-400 text-ink shadow-lg shadow-flame-500/30">
-                <Icon name="Headphones" size={22} />
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-flame-500 to-sun-400 text-ink shadow-lg shadow-flame-500/30">
+                <Icon name="Headphones" size={20} />
               </span>
               <div>
-                <p className="font-display text-xl font-bold">Prefer a callback?</p>
+                <p className="font-display text-lg font-bold">Prefer a callback?</p>
                 <p className="mt-1 text-sm text-brand-200">Leave your number — a loan advisor will reach out.</p>
               </div>
             </div>
-            <div className="mt-6">
+            <div className="mt-5">
               <CallbackForm stacked />
             </div>
             <p className="mt-4 flex items-center gap-1.5 text-xs text-brand-300">

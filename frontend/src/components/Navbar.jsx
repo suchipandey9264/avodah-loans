@@ -22,9 +22,9 @@ function LoansMenu({ onNavigate }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef(null);
   const panel = useRef(null);
-  const { pathname } = useLocation();
+  const { pathname, key } = useLocation();
 
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => setOpen(false), [key]);
   useEffect(() => {
     if (!open) return;
     const close = (e) => !wrap.current?.contains(e.target) && setOpen(false);
@@ -40,12 +40,12 @@ function LoansMenu({ onNavigate }) {
   }, [open]);
 
   return (
-    <div ref={wrap} className="relative" onMouseLeave={() => setOpen(false)}>
+    <div ref={wrap} className="relative" onPointerLeave={(e) => e.pointerType === "mouse" && setOpen(false)}>
       <button
         aria-expanded={open}
         aria-controls="loans-menu"
         onClick={() => setOpen((o) => !o)}
-        onMouseEnter={() => setOpen(true)}
+        onPointerEnter={(e) => e.pointerType === "mouse" && setOpen(true)}
         className={`inline-flex min-h-11 items-center gap-1 rounded-lg px-3 text-[15px] font-medium transition-colors hover:text-brand-700 ${pathname.startsWith("/search") ? "text-brand-700" : "text-ink"}`}
       >
         Loans <Icon name="ChevronDown" size={16} className={`transition-transform ${open ? "rotate-180" : ""}`} />
@@ -89,11 +89,11 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { applications } = useActivity();
-  const { pathname } = useLocation();
+  const { pathname, key } = useLocation();
   const appsPath = "/dashboard?tab=applications";
   const appsHref = user ? appsPath : `/login?next=${encodeURIComponent(appsPath)}`;
 
-  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => setOpen(false), [key]);
 
   useGSAP(() => {
     ScrollTrigger.create({
@@ -106,7 +106,7 @@ export default function Navbar() {
   const masked = !user ? "" : user.name ? user.name.split(" ")[0] : user.phone ? `+91 ••••• ${user.phone.slice(-5)}` : user.email;
 
   return (
-    <header ref={bar} data-scrolled="false" className="group/nav sticky top-0 z-50 border-b border-transparent bg-white/85 backdrop-blur-xl transition-[border-color,box-shadow] data-[scrolled=true]:border-line data-[scrolled=true]:shadow-[0_8px_30px_-20px_rgb(36_16_82/0.35)]">
+    <header ref={bar} data-scrolled="false" className="group/nav sticky top-0 z-[60] border-b border-transparent bg-white/85 backdrop-blur-xl transition-[border-color,box-shadow] data-[scrolled=true]:border-line data-[scrolled=true]:shadow-[0_8px_30px_-20px_rgb(36_16_82/0.35)]">
       <a href="#main" className="sr-only rounded-lg bg-white px-4 py-2 focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50">
         Skip to content
       </a>

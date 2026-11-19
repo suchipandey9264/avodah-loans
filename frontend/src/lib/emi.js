@@ -1,7 +1,7 @@
 /** Standard reducing-balance EMI: P·r·(1+r)^n / ((1+r)^n − 1), r = monthly rate. */
 export function emi(principal, annualRatePct, months) {
   const r = annualRatePct / 12 / 100;
-  if (r === 0) return principal / months;
+  if (r < 1e-9) return principal / months;
   const f = Math.pow(1 + r, months);
   return (principal * r * f) / (f - 1);
 }

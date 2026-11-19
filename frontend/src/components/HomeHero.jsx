@@ -7,14 +7,15 @@ import { Icon, SplitWords } from "./ui";
 
 // One portrait photo per loan category, self-hosted in /public/hero/card (720×900 WebP).
 // `approved` drives the floating "… approved" card so it matches the photo.
+// Photos: all supplied by the client.
 const HERO = {
-  home: { src: "/hero/card/home.webp", alt: "Modern dream villa with a private pool and lawn", approved: 4500000 },
-  lap: { src: "/hero/card/lap.webp", alt: "Premium residential and commercial towers", approved: 8000000 },
-  personal: { src: "/hero/card/personal.webp", alt: "Friends sitting together, enjoying a trip", approved: 500000 },
-  education: { src: "/hero/card/education.webp", alt: "Graduates throwing their caps outside a university", approved: 2000000 },
-  gold: { src: "/hero/card/gold.webp", alt: "Traditional gold necklace and earrings", approved: 250000 },
-  business: { src: "/hero/card/business.webp", alt: "Entrepreneur presenting to his team in a modern office", approved: 2500000 },
-  car: { src: "/hero/card/car.webp", alt: "Luxury car driving on an open road", approved: 950000 },
+  home: { src: "/hero/card/home.webp", alt: "Three generations of an Indian family holding up the keys outside their new home", approved: 4500000 },
+  lap: { src: "/hero/card/lap.webp", alt: "Smiling Indian couple receiving keys across a desk with their property documents", approved: 8000000 },
+  personal: { src: "/hero/card/personal.webp", alt: "Young woman on a sofa with her laptop, cheering with both fists raised", approved: 500000 },
+  education: { src: "/hero/card/education.webp", alt: "Graduate in cap and gown celebrating with her proud parents", approved: 2000000 },
+  gold: { src: "/hero/card/gold.webp", alt: "Smiling woman in a silk saree admiring a gold necklace shown to her at a jewellery store", approved: 250000 },
+  business: { src: "/hero/card/business.webp", alt: "Cheering shop owner holding a Business Growth sign at his grand opening", approved: 2500000 },
+  car: { src: "/hero/card/car.webp", alt: "Smiling family receiving the key to their new car, tied with a red bow, in the showroom", approved: 950000 },
 };
 const ORDER = LOAN_TYPES.map((t) => t.id);
 const inrFull = new Intl.NumberFormat("en-IN");
@@ -218,9 +219,10 @@ export default function HomeHero() {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
         const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
-        // The deck fades in as one piece, already fanned. Animating each .deck-inner fought its CSS hover
-        // transition on `transform` and left cards stuck at odd angles while the photos were still loading.
-        tl.from(".deck-tilt", { autoAlpha: 0, y: 24, scale: 0.96, duration: 0.45, ease: "power3.out" })
+        // Deal the cards in one after another, back to front. The CSS transition on .deck-inner is switched off
+        // for the tween (it fought GSAP and left cards stuck tilted) and restored by clearProps when each card lands.
+        tl.set(".deck-inner", { transition: "none" })
+          .from(".deck-inner", { y: 160, rotate: (i) => (i % 2 ? 14 : -14), autoAlpha: 0, duration: 0.7, stagger: { each: 0.1, from: "end" }, clearProps: "transform,opacity,visibility,transition" })
           .from(".hero-title .word-mask > span", { yPercent: 110, duration: 0.6, stagger: 0.03 }, 0.05)
           .from(".hero-sub, .hero-trust > li", { y: 16, autoAlpha: 0, duration: 0.4, stagger: 0.04 }, 0.15)
           .from(".hero-float", { y: 20, autoAlpha: 0, duration: 0.4, stagger: 0.06, ease: "power3.out" }, 0.2)
@@ -257,7 +259,7 @@ export default function HomeHero() {
   };
 
   return (
-    <section ref={root} className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-[#f3eefd] to-paper pt-6 pb-10 sm:pt-8">
+    <section ref={root} className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-[#f3eefd] to-paper pt-6 pb-8 sm:pt-8">
       <div className="hero-orb pointer-events-none absolute -top-40 -left-40 size-[520px] rounded-full bg-brand-200/60 blur-[120px]" />
       <div className="hero-orb pointer-events-none absolute top-20 right-[-10%] size-[460px] rounded-full bg-flame-100 blur-[120px]" />
 

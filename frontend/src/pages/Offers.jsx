@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { EMPLOYMENT, getOffers, loanById } from "../lib/loans";
+import { EMPLOYMENT, LOAN_TYPES, empById, getOffers, loanById } from "../lib/loans";
+import { detailsSchema } from "../lib/schemas";
+import { api, getToken } from "../lib/api";
 import { emi as emiFn, formatINR, formatShort } from "../lib/emi";
 import { useAuth } from "../lib/auth";
 import { addApplication, logCompare, logSearch, toggleSaved, useActivity } from "../lib/activity";
@@ -167,7 +169,12 @@ export default function Offers() {
   const tenure = Number(params.get("tenure"));
   const annualIncome = Number(params.get("income"));
   const pincode = params.get("pincode");
-  const valid = params.get("type") && emp && amount && tenure && annualIncome && pincode;
+  // A hand-edited or stale link (unknown type, amount out of range, tenure not offered…) goes back to the search form.
+  const valid =
+    LOAN_TYPES.some((t) => t.id === params.get("type")) &&
+    !!empById(emp) &&
+    type.tenures.includes(tenure) &&
+    detailsSchema(type).safeParse({ amount, pincode: pincode ?? "", income: annualIncome }).success;
 
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState("rate");
@@ -179,6 +186,7 @@ export default function Offers() {
   const [applied, setApplied] = useState(null);
   const [toast, setToast] = useState("");
   const listRef = useRef(null);
+  const applying = useRef(false);
 
   const all = useMemo(
     () => (valid ? getOffers({ type: type.id, amount, tenure, annualIncome }, emiFn).map((o) => ({ ...o, tenureMonths: tenure * 12 })) : []),
@@ -233,11 +241,27 @@ export default function Offers() {
     setToast(added ? `${o.name} saved to your dashboard` : `${o.name} removed from saved`);
   };
 
-  const apply = (o) => {
+  const apply = async (o) => {
     if (!user) return navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
-    const ref = "AV" + Date.now().toString().slice(-7);
-    addApplication({ ...snapshot(o), ref, emp, pincode, status: "submitted" });
-    setApplied({ ...o, ref });
+    // Already applied for this exact offer: show that application instead of creating a duplicate.
+    const prev = activity.applications.find((a) => a.key === savedKey(o) && a.amount === o.loanAmount && a.tenure === tenure);
+    if (prev) return setApplied({ ...o, ref: prev.ref });
+    if (applying.current) return; // double click
+    applying.current = true;
+    try {
+      // Send the application to the backend so the team receives it; sessions without a token (dev demo) stay local.
+      const saved = getToken()
+        ? await api.apply({ id: o.id, name: o.name, type: type.id, loanAmount: o.loanAmount, tenureMonths: tenure * 12, rate: o.rate, emi: Math.round(o.emi), emp, pincode })
+        : null;
+      const ref = saved?.ref ?? "AV" + Date.now().toString().slice(-7);
+      addApplication({ ...snapshot(o), ref, emp, pincode, status: "submitted" });
+      setApplied({ ...o, ref });
+    } catch (err) {
+      if (err.status === 401) return navigate(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
+      setToast(err.message || "Couldn’t submit your application — please try again.");
+    } finally {
+      applying.current = false;
+    }
   };
 
   const openCompare = () => {

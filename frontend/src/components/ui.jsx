@@ -66,7 +66,7 @@ export function SplitWords({ text, className = "", wordClassName = "" }) {
   );
 }
 
-export function SectionHeading({ eyebrow, title, sub, align = "left", dark = false, reveal = true }) {
+export function SectionHeading({ eyebrow, title, sub, align = "left", dark = false, reveal = true, as: H = "h2" }) {
   const center = align === "center";
   const r = reveal || undefined; // undefined drops the attribute, so the scroll fade-in skips it
   return (
@@ -79,12 +79,12 @@ export function SectionHeading({ eyebrow, title, sub, align = "left", dark = fal
           {eyebrow}
         </p>
       )}
-      <h2
+      <H
         className={`${eyebrow ? "mt-4" : ""} text-4xl leading-[1.05] font-bold sm:text-5xl ${dark ? "text-white" : "text-ink"}`}
         data-reveal={r}
       >
         {title}
-      </h2>
+      </H>
       {sub && (
         <p className={`mt-4 text-lg ${dark ? "text-brand-200" : "text-muted"}`} data-reveal={r}>
           {sub}

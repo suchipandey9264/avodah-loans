@@ -4,7 +4,7 @@ import { Icon, SectionHeading } from "./ui";
 
 export function LoanProducts() {
   return (
-    <section id="loans" className="py-10 sm:py-14">
+    <section id="loans" className="py-8 sm:py-10">
       <div className="container-x">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <SectionHeading title="Every loan you need, in one search." reveal={false} />

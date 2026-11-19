@@ -6,7 +6,7 @@ import { updateProfile } from "../lib/activity";
 import { gsap, useGSAP, MOTION_OK } from "../lib/motion";
 import { Icon, Logo } from "../components/ui";
 import { Captcha, CaptchaError } from "../components/Captcha";
-import { check, loginSchema, otpSchema } from "../lib/schemas";
+import { check, loginSchema, otpSchema, stripCountryCode } from "../lib/schemas";
 
 const PERKS = [
   ["BadgeCheck", "Pre-approved offers saved to one place"],
@@ -34,12 +34,15 @@ function OtpInput({ value, onChange, invalid }) {
           ref={(el) => (refs.current[i] = el)}
           inputMode="numeric"
           autoComplete={i === 0 ? "one-time-code" : "off"}
-          maxLength={1}
+          maxLength={i === 0 ? 6 : 1}
           aria-label={`Digit ${i + 1}`}
           aria-invalid={invalid}
           value={value[i]?.trim() ?? ""}
           onChange={(e) => {
-            const d = e.target.value.replace(/\D/g, "").slice(-1);
+            const all = e.target.value.replace(/\D/g, "");
+            // More than "old digit + new digit" arrived at once: an autofilled code, handle it like a paste.
+            if (all.length > 2) { onChange(all.slice(0, 6)); refs.current[Math.min(all.length, 6) - 1].focus(); return; }
+            const d = all.slice(-1);
             set(i, d);
             if (d && i < 5) refs.current[i + 1].focus();
           }}
@@ -141,7 +144,7 @@ export default function Login() {
       setMode("api");
       setDevOtp(res.devOtp ?? "");
     } catch (err) {
-      if (err.status && err.status < 500) {
+      if ((err.status && err.status < 500) || !import.meta.env.DEV) {
         setBusy(false);
         return setErrors({ [errKey]: err.fields?.phone ?? err.fields?.email ?? err.message });
       }
@@ -282,7 +285,7 @@ export default function Login() {
                           autoComplete="tel-national"
                           placeholder="98765 43210"
                           value={phone}
-                          onChange={(e) => { setErrors((x) => ({ ...x, contact: "" })); setPhone(e.target.value.replace(/\D/g, "").slice(0, 10)); }}
+                          onChange={(e) => { setErrors((x) => ({ ...x, contact: "" })); setPhone(stripCountryCode(e.target.value).slice(0, 10)); }}
                           aria-invalid={!!errors.contact}
                           aria-describedby="l-contact-msg"
                           className="min-h-13 w-full bg-transparent px-3 font-display text-xl font-bold tracking-wider tabular-nums outline-none placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:tracking-normal placeholder:text-muted/70"

@@ -6,7 +6,8 @@ import { Icon } from "../components/ui";
 export default function EmiPage() {
   return (
     <div className="bg-gradient-to-b from-brand-50 to-paper">
-      <EmiCalculator />
+      {/* The calculator is this page's main content, so its heading is the page h1 */}
+      <EmiCalculator headingAs="h1" />
       <section className="container-x pb-16">
         <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
           <div className="rounded-3xl border border-line bg-white p-7" data-reveal>
