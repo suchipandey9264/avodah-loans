@@ -8,7 +8,7 @@ export default function EmiPage() {
     <div className="bg-gradient-to-b from-brand-50 to-paper">
       {/* The calculator is this page's main content, so its heading is the page h1 */}
       <EmiCalculator headingAs="h1" />
-      <section className="container-x pb-16">
+      <section className="container-x pb-12">
         <div className="grid gap-5 lg:grid-cols-[1fr_1.2fr]">
           <div className="rounded-3xl border border-line bg-white p-7" data-reveal>
             <h2 className="text-2xl font-bold">How EMI is calculated</h2>

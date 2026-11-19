@@ -39,7 +39,8 @@ export default function Support() {
     () => {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
-        gsap.from(".sp-anim", { y: 30, autoAlpha: 0, duration: 0.9, stagger: 0.07, ease: "expo.out" });
+        // fromTo + clearProps: the cards lift on hover (CSS transform transition), which a plain from() could get stuck on.
+        gsap.fromTo(".sp-anim", { y: 30, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.9, stagger: 0.07, ease: "expo.out", clearProps: "transform" });
       });
       return () => mm.revert();
     },
@@ -48,13 +49,13 @@ export default function Support() {
 
   return (
     <div ref={root}>
-      <section className="relative overflow-hidden bg-brand-900 pt-12 pb-20 text-white">
+      <section className="relative overflow-hidden bg-brand-900 pt-9 pb-14 text-white">
         <div className="grain-grid pointer-events-none absolute inset-0 opacity-40" />
         <div className="pointer-events-none absolute -top-24 right-0 size-96 rounded-full bg-brand-500/40 blur-[100px]" />
         <div className="container-x relative text-center">
           <p className="sp-anim eyebrow border-white/15 bg-white/5 text-flame-400"><Icon name="Headphones" size={14} /> Support & Help</p>
-          <h1 className="sp-anim mx-auto mt-5 max-w-2xl text-5xl leading-[1.05] font-extrabold sm:text-6xl">How can we help you today?</h1>
-          <div className="sp-anim relative mx-auto mt-10 max-w-2xl">
+          <h1 className="sp-anim mx-auto mt-5 max-w-2xl text-4xl leading-[1.05] font-extrabold sm:text-5xl">How can we help you today?</h1>
+          <div className="sp-anim relative mx-auto mt-8 max-w-2xl">
             <Icon name="Search" size={22} className="absolute top-1/2 left-5 -translate-y-1/2 text-muted" />
             <label htmlFor="help-search" className="sr-only">Search help articles</label>
             <input
@@ -90,8 +91,8 @@ export default function Support() {
         </ul>
       </section>
 
-      <section className="py-14">
-        <div className="container-x grid grid-cols-1 gap-10 lg:grid-cols-[260px_1fr]">
+      <section className="py-10">
+        <div className="container-x grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
           <nav aria-label="Help topics" className="lg:sticky lg:top-24 lg:self-start">
             <ul className="no-scrollbar flex gap-2 overflow-x-auto lg:grid lg:gap-1">
               {CATS.map((c) => (
@@ -117,11 +118,11 @@ export default function Support() {
         </div>
       </section>
 
-      <section className="px-3 pb-16 sm:px-5">
-        <div className="mx-auto max-w-7xl rounded-[28px] bg-brand-800 p-8 text-white sm:p-12" data-reveal>
+      <section className="px-3 pb-12 sm:px-5">
+        <div className="mx-auto max-w-7xl rounded-[28px] bg-brand-800 p-6 text-white sm:p-9" data-reveal>
           <div className="grid gap-8 lg:grid-cols-[1fr_1.4fr] lg:items-center">
             <div>
-              <h2 className="text-3xl font-bold sm:text-4xl">Still need help?</h2>
+              <h2 className="text-3xl font-bold sm:text-3xl">Still need help?</h2>
               <p className="mt-2 text-brand-200">Leave your number and a loan advisor will call you back — free.</p>
             </div>
             <CallbackForm />

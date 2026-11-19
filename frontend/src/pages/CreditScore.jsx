@@ -57,7 +57,7 @@ function Gauge({ score }) {
         <text x="220" y="148" fontSize="10" fill="var(--color-muted)">900</text>
       </svg>
       <figcaption className="-mt-2 text-center">
-        <span ref={label} className="font-display text-6xl font-extrabold tabular-nums">{score}</span>
+        <span ref={label} className="font-display text-5xl font-extrabold tabular-nums">{score}</span>
         <span className={`mt-1 block text-lg font-bold ${band.text}`}>{band.label}</span>
       </figcaption>
     </figure>
@@ -156,14 +156,14 @@ export default function CreditScore() {
 
   return (
     <div ref={root}>
-      <section className="bg-gradient-to-b from-brand-50 to-paper pt-10 pb-14 sm:pt-12">
-        <div className="container-x grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-start">
+      <section className="bg-gradient-to-b from-brand-50 to-paper pt-8 pb-10 sm:pt-9">
+        <div className="container-x grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-start">
           <div>
             <p className="cs-anim eyebrow">Free credit score</p>
-            <h1 className="cs-anim mt-4 text-5xl leading-[1.02] font-extrabold sm:text-6xl">Know your score. <span className="text-brand-700">Borrow smarter.</span></h1>
+            <h1 className="cs-anim mt-4 text-4xl leading-[1.02] font-extrabold sm:text-5xl">Know your score. <span className="text-brand-700">Borrow smarter.</span></h1>
             <p className="cs-anim mt-5 max-w-lg text-lg text-muted">Your credit score decides the rate you get. See what each range means — then get your full report free.</p>
 
-            <div className="cs-anim mt-10 rounded-[28px] border border-line bg-white p-6 sm:p-8">
+            <div className="cs-anim mt-8 rounded-[28px] border border-line bg-white p-6 sm:p-6">
               <Gauge score={score} />
               <label htmlFor="score-range" className="mt-6 block text-sm font-medium">Drag to explore score ranges</label>
               <input id="score-range" type="range" min={300} max={900} value={score} onChange={(e) => setScore(Number(e.target.value))} aria-valuetext={`${score}, ${band.label}`} className="emi-range mt-3 w-full" style={{ "--pct": `${((score - 300) / 600) * 100}%` }} />
@@ -177,7 +177,7 @@ export default function CreditScore() {
             </div>
           </div>
 
-          <div className="cs-anim rounded-[28px] border border-line bg-white p-6 shadow-[0_30px_60px_-40px_rgb(36_16_82/0.5)] sm:p-8 lg:sticky lg:top-24">
+          <div className="cs-anim rounded-[28px] border border-line bg-white p-6 shadow-[0_30px_60px_-40px_rgb(36_16_82/0.5)] sm:p-6 lg:sticky lg:top-24">
             <div className="flex items-center gap-3">
               <span className="grid size-12 place-items-center rounded-2xl bg-brand-700 text-white"><Icon name="Gauge" size={24} /></span>
               <div>
@@ -190,10 +190,10 @@ export default function CreditScore() {
         </div>
       </section>
 
-      <section className="py-14">
+      <section className="py-10">
         <div className="container-x">
           <SectionHeading eyebrow="Improve your score" title="Four habits that move your score up." />
-          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-stagger>
+          <ul className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" data-stagger>
             {TIPS.map(([icon, t, d]) => (
               <li key={t} className="rounded-3xl border border-line bg-white p-6">
                 <span className="grid size-12 place-items-center rounded-2xl bg-brand-100 text-brand-700"><Icon name={icon} size={22} /></span>
@@ -202,7 +202,7 @@ export default function CreditScore() {
               </li>
             ))}
           </ul>
-          <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-brand-900 p-8 text-white" data-reveal>
+          <div className="mt-9 flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-brand-900 p-6 text-white" data-reveal>
             <p className="font-display text-2xl font-bold">Score looking good? See the rates you qualify for.</p>
             <Link to="/search" className="btn-accent"><Icon name="Search" size={18} /> Search Loan</Link>
           </div>

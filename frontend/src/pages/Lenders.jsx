@@ -26,15 +26,15 @@ export default function Lenders() {
   );
 
   return (
-    <div className="bg-gradient-to-b from-brand-50 to-paper pb-16">
-      <section className="container-x pt-12 sm:pt-16">
+    <div className="bg-gradient-to-b from-brand-50 to-paper pb-12">
+      <section className="container-x pt-9 sm:pt-12">
         <p className="eyebrow" data-reveal>{LENDERS.length} lending partners</p>
-        <h1 className="mt-4 max-w-3xl text-5xl leading-[1.02] font-extrabold sm:text-6xl" data-reveal>
+        <h1 className="mt-4 max-w-3xl text-4xl leading-[1.02] font-extrabold sm:text-5xl" data-reveal>
           Every bank & lender, <span className="text-brand-700">one page each.</span>
         </h1>
         <p className="mt-4 max-w-xl text-lg text-muted" data-reveal>Open any lender to see its rates across loan types, eligibility, documents and an EMI estimate.</p>
 
-        <div className="mt-10 flex flex-wrap items-center gap-2" data-reveal>
+        <div className="mt-8 flex flex-wrap items-center gap-2" data-reveal>
           <div className="relative w-full sm:w-72">
             <Icon name="Search" size={18} className="absolute top-1/2 left-4 -translate-y-1/2 text-muted" />
             <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search a bank or NBFC" aria-label="Search lenders" className="field pl-11" />
@@ -49,7 +49,7 @@ export default function Lenders() {
         </div>
       </section>
 
-      <section className="container-x mt-8">
+      <section className="container-x mt-6">
         <p className="mb-4 text-sm text-muted" aria-live="polite">{list.length} lender{list.length === 1 ? "" : "s"} · sorted by lowest starting rate</p>
         <ul ref={grid} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {list.map((l) => (
@@ -76,7 +76,7 @@ export default function Lenders() {
             </li>
           ))}
         </ul>
-        {!list.length && <p className="rounded-3xl border border-dashed border-brand-200 bg-white p-10 text-center text-muted">No lender matches “{q}”.</p>}
+        {!list.length && <p className="rounded-3xl border border-dashed border-brand-200 bg-white p-8 text-center text-muted">No lender matches “{q}”.</p>}
       </section>
     </div>
   );

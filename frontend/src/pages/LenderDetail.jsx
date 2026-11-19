@@ -54,7 +54,7 @@ function ProductPanel({ lender, product }) {
         </div>
         <div className="mt-6 border-t border-white/10 pt-5">
           <p className="text-sm text-brand-200">Monthly EMI at {product.rate.toFixed(2)}%</p>
-          <p className="font-display text-4xl font-extrabold tabular-nums" aria-live="polite">{formatINR(monthly)}</p>
+          <p className="font-display text-3xl font-extrabold tabular-nums" aria-live="polite">{formatINR(monthly)}</p>
           <p className="mt-1 text-sm text-brand-200">Total interest {formatShort(monthly * years * 12 - amount)}</p>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function LenderDetail() {
       mm.add(MOTION_OK, () => {
         const tl = gsap.timeline({ defaults: { ease: "expo.out" } });
         tl.from(".ld-logo", { scale: 0.6, autoAlpha: 0, rotate: -8, duration: 0.9 })
-          .from(".ld-anim", { y: 24, autoAlpha: 0, duration: 0.8, stagger: 0.06 }, "-=0.6");
+          .fromTo(".ld-anim", { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.8, stagger: 0.06, clearProps: "transform" }, "-=0.6"); // explicit end: the CTA button has a CSS transform transition
       });
       return () => mm.revert();
     },
@@ -92,8 +92,8 @@ export default function LenderDetail() {
   const maxLoan = Math.max(...lender.products.map((p) => p.maxAmount));
 
   return (
-    <div ref={root} key={id} className="bg-paper pb-16">
-      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-paper pt-8 pb-12">
+    <div ref={root} key={id} className="bg-paper pb-12">
+      <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 to-paper pt-8 pb-9">
         <div className="pointer-events-none absolute -top-32 right-0 size-96 rounded-full bg-brand-200/50 blur-[100px]" />
         <div className="container-x relative">
           <nav aria-label="Breadcrumb" className="flex items-center justify-between gap-4 text-sm">
@@ -105,13 +105,13 @@ export default function LenderDetail() {
             <span className="tabular-nums text-muted">{idx + 1} of {LENDERS.length}</span>
           </nav>
 
-          <div className="mt-8 grid gap-8 lg:grid-cols-[auto_1fr_auto] lg:items-center">
+          <div className="mt-6 grid gap-8 lg:grid-cols-[auto_1fr_auto] lg:items-center">
             <div className="ld-logo grid size-28 place-items-center rounded-3xl border border-line bg-white p-3 shadow-[0_20px_40px_-25px_rgb(36_16_82/0.5)] sm:size-32">
               <img src={`/bank-logos/${lender.logo}.png`} alt={`${lender.name} logo`} className="max-h-full max-w-full object-contain" />
             </div>
             <div>
               <p className="ld-anim eyebrow">{lender.kind} · {kindLabel(lender.kind)}</p>
-              <h1 className="ld-anim mt-3 text-4xl font-extrabold sm:text-5xl">{lender.name}</h1>
+              <h1 className="ld-anim mt-3 text-3xl font-extrabold sm:text-4xl">{lender.name}</h1>
               <p className="ld-anim mt-3 max-w-2xl text-muted">{lender.about}</p>
             </div>
             <Link to={`/search?type=${lender.products[0].type}`} className="ld-anim btn-primary">
@@ -119,7 +119,7 @@ export default function LenderDetail() {
             </Link>
           </div>
 
-          <dl className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line lg:grid-cols-4">
+          <dl className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line lg:grid-cols-4">
             {[
               ["Rates starting from", `${lender.lowestRate.toFixed(2)}% p.a.`],
               ["Loan types offered", `${lender.products.length} of 7`],
@@ -143,7 +143,7 @@ export default function LenderDetail() {
             const t = loanById(p.type);
             const on = p.type === product.type;
             return (
-              <button key={p.type} role="tab" aria-selected={on} aria-controls="ld-panel" onClick={() => setProductType(p.type)} className={`flex min-h-14 shrink-0 items-center gap-2 rounded-2xl border px-4 text-left transition-colors ${on ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-white hover:border-brand-300"}`}>
+              <button key={p.type} role="tab" aria-selected={on} aria-controls="ld-panel" onClick={() => setProductType(p.type)} className={`flex min-h-12 shrink-0 items-center gap-2 rounded-2xl border px-4 text-left transition-colors ${on ? "border-brand-700 bg-brand-700 text-white" : "border-line bg-white hover:border-brand-300"}`}>
                 <Icon name={t.icon} size={18} className={on ? "text-flame-400" : "text-brand-700"} />
                 <span className="leading-tight">
                   <span className="block text-sm font-semibold">{t.label}</span>
@@ -153,13 +153,13 @@ export default function LenderDetail() {
             );
           })}
         </div>
-        <div id="ld-panel" role="tabpanel" className="mt-5 rounded-[28px] border border-line bg-white p-6 sm:p-8">
+        <div id="ld-panel" role="tabpanel" className="mt-5 rounded-[28px] border border-line bg-white p-6 sm:p-6">
           <ProductPanel key={product.type} lender={lender} product={product} />
         </div>
       </section>
 
       {/* Rate table */}
-      <section className="container-x mt-12" data-reveal>
+      <section className="container-x mt-9" data-reveal>
         <h2 className="text-2xl font-bold">Rate card</h2>
         <div className="mt-4 overflow-x-auto rounded-3xl border border-line bg-white">
           <table className="w-full min-w-[560px] text-left text-sm">
@@ -188,7 +188,7 @@ export default function LenderDetail() {
       </section>
 
       {/* Eligibility & documents */}
-      <section className="container-x mt-12" data-reveal>
+      <section className="container-x mt-9" data-reveal>
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-2xl font-bold">Eligibility & documents</h2>
           <div role="radiogroup" aria-label="Your profile" className="flex rounded-xl bg-brand-50 p-1">
@@ -211,7 +211,7 @@ export default function LenderDetail() {
 
       {/* Similar */}
       {similar.length > 0 && (
-        <section className="container-x mt-12" data-reveal>
+        <section className="container-x mt-9" data-reveal>
           <h2 className="text-2xl font-bold">Similar {lender.kind === "NBFC" || lender.kind === "HFC" ? lender.kind + "s" : lender.kind + "s"}</h2>
           <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {similar.map((l) => (
@@ -227,7 +227,7 @@ export default function LenderDetail() {
       )}
 
       {/* One-by-one navigation */}
-      <nav aria-label="Browse lenders" className="container-x mt-12 grid grid-cols-2 gap-3">
+      <nav aria-label="Browse lenders" className="container-x mt-9 grid grid-cols-2 gap-3">
         {[[prev, "Previous lender", "ArrowLeft"], [next, "Next lender", "ArrowRight"]].map(([l, label, icon], i) => (
           <Link key={label} to={`/lenders/${l.id}`} className={`group flex items-center gap-4 rounded-3xl border border-line bg-white p-5 transition-colors hover:border-brand-700 ${i ? "flex-row-reverse text-right" : ""}`}>
             <span className="grid size-11 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-700 group-hover:text-white"><Icon name={icon} size={18} /></span>
