@@ -92,9 +92,9 @@ function TypeStep({ onPick }) {
     <div>
       <h1 className="step-anim text-3xl font-bold sm:text-4xl">What kind of loan do you need?</h1>
       <p className="step-anim mt-2 text-muted">Choose one to see tailored offers from 50+ lenders.</p>
-      <div className="mt-8 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Loan type">
+      <div className="mt-8 grid gap-3 sm:grid-cols-2" role="group" aria-label="Loan type">
         {LOAN_TYPES.map((t) => (
-          <div key={t.id} className="step-anim"><button role="radio" aria-checked="false" onClick={() => onPick(t.id)} className="group w-full flex items-center gap-4 rounded-2xl border border-line bg-white p-4 text-left transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg">
+          <div key={t.id} className="step-anim"><button type="button" onClick={() => onPick(t.id)} className="group w-full flex items-center gap-4 rounded-2xl border border-line bg-white p-4 text-left transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg">
             <LoanIcon name={t.icon} className="size-12 group-hover:bg-brand-700 group-hover:text-white" size={24} />
             <span className="flex-1 leading-tight">
               <span className="block font-semibold">{t.label}</span>

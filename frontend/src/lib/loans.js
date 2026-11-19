@@ -167,7 +167,7 @@ export function getOffers({ type, amount, tenure, annualIncome }, emiFn) {
   const monthlyIncome = annualIncome / 12;
   return LENDERS.flatMap((l) => {
     const p = l.products.find((x) => x.type === type);
-    if (!p) return [];
+    if (!p || tenure > p.maxTenure) return [];
     const loanAmount = Math.min(amount, p.maxAmount);
     const emi = emiFn(loanAmount, p.rate, tenure * 12);
     // Lenders typically cap total EMI at ~50% of monthly income (FOIR).

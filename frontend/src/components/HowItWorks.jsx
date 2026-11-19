@@ -30,7 +30,7 @@ export default function HowItWorks() {
 
   return (
     <section id="how" ref={root} className="bg-brand-950 text-white">
-      <div className="py-10 sm:py-14">
+      <div className="py-8 sm:py-10">
         <div className="container-x flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-xl">
             <p className="eyebrow border-white/15 bg-white/5 text-flame-400">How it works</p>
@@ -39,21 +39,21 @@ export default function HowItWorks() {
           <p className="max-w-sm text-brand-200">No branch visits, no paperwork marathons. One digital journey, start to finish.</p>
         </div>
 
-        <div className="relative mt-10">
-          <span className="how-vline absolute top-0 bottom-0 left-[calc(1rem+27px)] w-0.5 origin-top bg-flame-400/60 sm:left-[calc(1.5rem+27px)] lg:hidden" aria-hidden="true" />
+        <div className="relative mt-8">
+          <span className="how-vline absolute top-0 bottom-0 left-[calc(1rem+23px)] w-0.5 origin-top bg-flame-400/60 sm:left-[calc(1.5rem+23px)] lg:hidden" aria-hidden="true" />
           <ol
             ref={track}
             className="grid gap-6 px-4 sm:px-6 lg:grid-cols-3 lg:px-[max(2rem,calc((100vw-80rem)/2+2rem))] xl:grid-cols-5 xl:gap-4"
           >
             {STEPS.map((s, i) => (
-              <li key={s.title} className="how-card relative flex gap-5 lg:block lg:rounded-3xl lg:border lg:border-white/10 lg:bg-white/[0.04] lg:p-6">
-                <span className="how-icon relative z-10 grid size-14 shrink-0 place-items-center rounded-2xl bg-flame-400 text-ink">
-                  <Icon name={s.icon} size={26} />
+              <li key={s.title} className="how-card relative flex gap-4 lg:block lg:rounded-2xl lg:border lg:border-white/10 lg:bg-white/[0.04] lg:p-5">
+                <span className="how-icon relative z-10 grid size-12 shrink-0 place-items-center rounded-xl bg-flame-400 text-ink">
+                  <Icon name={s.icon} size={22} />
                 </span>
                 <div className="pb-2">
-                  <p className="font-display text-sm font-semibold tracking-widest text-flame-400 lg:mt-6">STEP {String(i + 1).padStart(2, "0")}</p>
-                  <h3 className="mt-2 text-2xl font-bold">{s.title}</h3>
-                  <p className="mt-2 text-brand-200">{s.desc}</p>
+                  <p className="font-display text-xs font-semibold tracking-widest text-flame-400 lg:mt-4">STEP {String(i + 1).padStart(2, "0")}</p>
+                  <h3 className="mt-1.5 text-xl font-bold">{s.title}</h3>
+                  <p className="mt-1.5 text-[15px] text-brand-200">{s.desc}</p>
                 </div>
               </li>
             ))}

@@ -91,7 +91,7 @@ export default function Support() {
       </section>
 
       <section className="py-14">
-        <div className="container-x grid gap-10 lg:grid-cols-[260px_1fr]">
+        <div className="container-x grid grid-cols-1 gap-10 lg:grid-cols-[260px_1fr]">
           <nav aria-label="Help topics" className="lg:sticky lg:top-24 lg:self-start">
             <ul className="no-scrollbar flex gap-2 overflow-x-auto lg:grid lg:gap-1">
               {CATS.map((c) => (

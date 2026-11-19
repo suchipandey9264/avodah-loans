@@ -27,7 +27,9 @@ export const otpContactLimiter = limiter({
   limit: 3,
   message: "Too many codes sent to this number or email — please wait 10 minutes.",
   keyGenerator: (req) => {
-    const contact = String(req.body?.email || req.body?.phone || "").trim().toLowerCase();
+    // Same choice as identify() in routes/auth.js: a non-blank email wins, otherwise the phone number.
+    const email = String(req.body?.email ?? "").trim().toLowerCase();
+    const contact = email || String(req.body?.phone ?? "").replace(/\D/g, "").slice(-10);
     return contact ? `contact:${contact}` : ipKeyGenerator(req.ip);
   },
 });

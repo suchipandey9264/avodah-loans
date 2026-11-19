@@ -3,9 +3,15 @@ import { formatShort } from "./emi";
 
 // Form schemas. Keep the field rules in sync with backend/src/lib/validate.js.
 
+/** Digits only, minus a leading +91 / 0 when the number is longer than 10 digits. */
+export const stripCountryCode = (v) => {
+  const d = String(v).replace(/\D/g, "");
+  return d.length > 10 ? d.replace(/^(91|0)/, "") : d;
+};
+
 export const phoneSchema = z
   .string()
-  .transform((v) => v.replace(/\D/g, ""))
+  .transform(stripCountryCode)
   .pipe(z.string().regex(/^[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number."));
 export const emailSchema = z
   .string()

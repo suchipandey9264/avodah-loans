@@ -3,7 +3,7 @@ import { Icon, SectionHeading } from "./ui";
 
 export default function WhyUs() {
   return (
-    <section className="relative overflow-hidden bg-white py-10 sm:py-14">
+    <section className="relative overflow-hidden bg-white py-8 sm:py-10">
       <div className="container-x">
         <SectionHeading
           align="center"

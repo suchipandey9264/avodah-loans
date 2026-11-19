@@ -39,7 +39,7 @@ export default function Partners() {
   };
 
   return (
-    <section ref={root} aria-labelledby="partners-title" className="container-x py-6">
+    <section ref={root} aria-labelledby="partners-title" className="container-x py-4">
       <div className="flex flex-col gap-4 rounded-3xl border border-line bg-white p-5 sm:p-6 lg:flex-row lg:items-center">
         <div className="flex items-center justify-between gap-4 lg:w-60 lg:shrink-0 lg:border-r lg:border-line lg:pr-5">
           <h2 id="partners-title" className="text-lg leading-tight font-bold">

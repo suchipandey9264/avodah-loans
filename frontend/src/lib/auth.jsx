@@ -1,6 +1,6 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { setActivityUser, updateProfile } from "./activity";
-import { api } from "./api";
+import { api, getToken } from "./api";
 
 // Session kept in this browser. The token (when the backend issued one) lives in lib/api.js.
 // user = { id, name, phone, email, since } — `id` is the phone or email they signed in with.
@@ -32,12 +32,20 @@ export function AuthProvider({ children }) {
     try { localStorage.setItem(KEY, JSON.stringify(u)); } catch { /* storage unavailable */ }
   };
 
-  const logout = () => {
-    api.logout().catch(() => {});
+  const clear = () => {
     setUser(null);
     setActivityUser(null);
     try { localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
   };
+  const logout = () => {
+    api.logout().catch(() => {});
+    clear();
+  };
+
+  useEffect(() => {
+    if (!initial || !getToken()) return;
+    api.me().catch((err) => { if (err.status === 401) api.logout().catch(() => {}).finally(clear); });
+  }, []);
 
   return <AuthCtx.Provider value={{ user, login, logout }}>{children}</AuthCtx.Provider>;
 }

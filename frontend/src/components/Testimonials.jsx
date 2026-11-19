@@ -3,7 +3,7 @@ import { Icon, SectionHeading } from "./ui";
 
 export default function Testimonials() {
   return (
-    <section className="overflow-hidden bg-brand-50 py-10 sm:py-14">
+    <section className="overflow-hidden bg-brand-50 py-8 sm:py-10">
       <div className="container-x">
         <SectionHeading
           eyebrow="Customer stories"
@@ -11,18 +11,18 @@ export default function Testimonials() {
           sub="People who secured their dream home, grew their business and planned their future."
           reveal={false}
         />
-        <ul className="mt-10 grid gap-5 md:grid-cols-3">
+        <ul className="mt-8 grid gap-4 md:grid-cols-3">
           {TESTIMONIALS.map((t, i) => (
-            <li key={t.name} className={`testi-card relative flex flex-col rounded-3xl p-7 ${i === 1 ? "bg-brand-700 text-white" : "bg-white"}`}>
-              <Icon name="Quote" size={40} className={`${i === 1 ? "text-flame-400" : "text-brand-200"}`} />
-              <div className="mt-4 flex gap-0.5 text-flame-500" role="img" aria-label="Rated 5 out of 5">
-                {Array.from({ length: 5 }).map((_, k) => <Icon key={k} name="Star" size={16} fill="currentColor" />)}
+            <li key={t.name} className={`testi-card relative flex flex-col rounded-2xl p-5 ${i === 1 ? "bg-brand-700 text-white" : "bg-white"}`}>
+              <Icon name="Quote" size={28} className={`${i === 1 ? "text-flame-400" : "text-brand-200"}`} />
+              <div className="mt-3 flex gap-0.5 text-flame-500" role="img" aria-label="Rated 5 out of 5">
+                {Array.from({ length: 5 }).map((_, k) => <Icon key={k} name="Star" size={14} fill="currentColor" />)}
               </div>
-              <blockquote className={`mt-4 flex-1 text-lg leading-relaxed ${i === 1 ? "text-brand-50" : "text-ink"}`}>
+              <blockquote className={`mt-3 flex-1 text-[15px] leading-relaxed ${i === 1 ? "text-brand-50" : "text-ink"}`}>
                 “{t.text}”
               </blockquote>
-              <footer className="mt-8 flex items-center gap-3">
-                <span className={`grid size-12 place-items-center rounded-full font-display font-bold ${i === 1 ? "bg-flame-400 text-ink" : "bg-brand-100 text-brand-700"}`}>
+              <footer className="mt-5 flex items-center gap-3">
+                <span className={`grid size-10 place-items-center rounded-full text-sm font-display font-bold ${i === 1 ? "bg-flame-400 text-ink" : "bg-brand-100 text-brand-700"}`}>
                   {t.initials}
                 </span>
                 <div className="leading-tight">

@@ -34,7 +34,10 @@ function ago(ts) {
 }
 const dateFmt = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" });
 const inr = new Intl.NumberFormat("en-IN");
-const syncProfile = (p) => { if (getToken()) api.updateProfile(p).catch(() => {}); };
+/** Saves to the account; `onError` gets the server's message (the change is still kept on this device). */
+const syncProfile = (p, onError) => {
+  if (getToken()) api.updateProfile(p).catch((err) => onError?.(`Saved on this device only — ${err.message}`));
+};
 
 /** Monthly income lenders will use, from the employment details. */
 function monthlyIncome(e = {}) {
@@ -192,7 +195,7 @@ function EmploymentForm({ profile, onSaved }) {
     const data = Object.fromEntries([...new FormData(ev.currentTarget)].map(([k, v]) => [k, String(v).trim()]).filter(([, v]) => v !== ""));
     const patch = { emp, employment: { ...data, updatedAt: Date.now() } };
     updateProfile(patch);
-    syncProfile(patch);
+    syncProfile(patch, onSaved);
     onSaved("Employment details saved");
   };
 
@@ -328,6 +331,7 @@ export default function Dashboard() {
   const root = useRef(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [toast, setToast] = useState("");
+  const toastTimer = useRef();
 
   const feed = useMemo(() => {
     const ev = [
@@ -390,7 +394,11 @@ export default function Dashboard() {
   const first = fullName.split(" ")[0];
 
   const go = (id) => setParams(id === "overview" ? {} : { tab: id });
-  const flash = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2500); };
+  const flash = (msg) => {
+    clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(""), 3500);
+  };
 
   return (
     <div ref={root} className="min-h-dvh bg-gradient-to-b from-brand-50 to-paper pb-24">
@@ -756,7 +764,7 @@ export default function Dashboard() {
                     const f = Object.fromEntries([...new FormData(ev.currentTarget)].map(([k, v]) => [k, String(v).trim()]));
                     if (f.pan) f.pan = f.pan.toUpperCase();
                     updateProfile(f);
-                    syncProfile(f);
+                    syncProfile(f, flash);
                     flash("Personal details saved");
                   }}
                   className="grid gap-5"

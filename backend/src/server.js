@@ -5,7 +5,7 @@ import { HttpError, session } from "./lib/http.js";
 import { captchaEnabled } from "./lib/captcha.js";
 import { apiLimiter } from "./lib/limits.js";
 import activity from "./routes/activity.js";
-import auth from "./routes/auth.js";
+import auth, { DEMO } from "./routes/auth.js";
 import loans from "./routes/loans.js";
 
 const app = express();
@@ -46,9 +46,21 @@ app.use((err, _req, res, _next) => {
   res.status(status).json({ error: status >= 500 && status !== 503 ? "Something went wrong" : message, ...(err.fields && { fields: err.fields }) });
 });
 
+if (process.env.NODE_ENV === "production" && DEMO) {
+  console.error("Refusing to start: OTP_DEMO=true lets anyone log into any account. Set OTP_DEMO=false in production.");
+  process.exit(1);
+}
+if (process.env.NODE_ENV === "production" && process.env.TURNSTILE_SECRET_KEY?.startsWith("1x0000")) {
+  console.warn("[captcha] TURNSTILE_SECRET_KEY is Cloudflare's TEST key — every captcha passes. Use your real secret.");
+}
+
 try {
   await connectDB();
-  app.listen(PORT, () => {
+  app.listen(PORT, (err) => {
+    if (err) {
+      console.error(`Could not start — port ${PORT}: ${err.message}`);
+      process.exit(1);
+    }
     console.log(`AvodahLoans API on http://localhost:${PORT}`);
     if (!captchaEnabled) console.warn("[captcha] TURNSTILE_SECRET_KEY is not set — captcha checks are OFF");
   });
