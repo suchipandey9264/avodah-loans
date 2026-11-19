@@ -36,7 +36,7 @@ function Matching({ count, logos, onDone }) {
   );
 
   return (
-    <div ref={root} role="status" aria-live="polite" className="flex min-h-[70dvh] flex-col items-center justify-center px-4 py-16 text-center">
+    <div ref={root} role="status" aria-live="polite" className="flex min-h-[70dvh] flex-col items-center justify-center px-4 py-12 text-center">
       <div className="relative size-60">
         <div className="match-orbit absolute inset-0 rounded-full border-2 border-dashed border-brand-200">
           {logos.slice(0, 8).map((l, i) => {
@@ -48,7 +48,7 @@ function Matching({ count, logos, onDone }) {
           <Icon name="Search" size={44} />
         </div>
       </div>
-      <h1 className="mt-10 text-2xl font-bold sm:text-3xl">Finding the best offers for you…</h1>
+      <h1 className="mt-8 text-2xl font-bold sm:text-3xl">Finding the best offers for you…</h1>
       <div className="mt-6 h-2 w-full max-w-sm overflow-hidden rounded-full bg-brand-100">
         <div className="match-bar h-full origin-left scale-x-0 rounded-full bg-gradient-to-r from-brand-600 to-flame-500" />
       </div>
@@ -75,17 +75,17 @@ function Stat({ label, children, note, accent }) {
 function OfferCard({ o, best, saved, onSave, compared, onCompare, compareDisabled, onApply }) {
   const [open, setOpen] = useState(false);
   return (
-    <li className={`offer-card relative rounded-3xl border bg-white transition-[box-shadow,border-color] hover:shadow-[0_24px_50px_-30px_rgb(36_16_82/0.45)] ${best ? "border-flame-400" : "border-line hover:border-brand-200"}`}>
+    <li className={`offer-card relative rounded-2xl border bg-white transition-[box-shadow,border-color] hover:shadow-[0_24px_50px_-30px_rgb(36_16_82/0.45)] ${best ? "border-flame-400" : "border-line hover:border-brand-200"}`}>
       {best && (
         <span className="absolute -top-3 left-5 inline-flex items-center gap-1 rounded-full bg-flame-400 px-3 py-1 text-xs font-bold text-ink">
           <Icon name="Star" size={12} fill="currentColor" /> Lowest rate
         </span>
       )}
 
-      <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-[minmax(0,1.6fr)_minmax(0,2fr)_auto] md:items-center md:gap-6">
+      <div className="grid gap-3 px-4 pt-5 pb-3 sm:px-5 md:grid-cols-[minmax(0,1.6fr)_minmax(0,2fr)_auto] md:items-center md:gap-5">
         {/* Lender */}
         <div className="flex items-start gap-3">
-          <Link to={`/lenders/${o.id}`} tabIndex={-1} aria-hidden="true" className="grid h-14 w-20 shrink-0 place-items-center rounded-xl bg-white p-1.5 ring-1 ring-line">
+          <Link to={`/lenders/${o.id}`} tabIndex={-1} aria-hidden="true" className="grid h-12 w-16 shrink-0 place-items-center rounded-xl bg-white p-1.5 ring-1 ring-line">
             <img src={`/bank-logos/${o.logo}.png`} alt="" loading="lazy" className="max-h-full max-w-full object-contain" />
           </Link>
           <div className="min-w-0 leading-tight">
@@ -105,17 +105,17 @@ function OfferCard({ o, best, saved, onSave, compared, onCompare, compareDisable
         </div>
 
         {/* Numbers */}
-        <dl className="grid grid-cols-3 gap-3 rounded-2xl bg-brand-50/60 p-4 md:bg-transparent md:p-0">
+        <dl className="grid grid-cols-3 gap-3 rounded-xl bg-brand-50/60 p-3 md:bg-transparent md:p-0">
           <Stat label="Loan amount" note={o.cappedAmount && "Max for this lender"}>{formatShort(o.loanAmount)}</Stat>
           <Stat label="ROI from" accent>{o.rate.toFixed(2)}%</Stat>
           <Stat label="Monthly EMI">{formatINR(o.emi)}</Stat>
         </dl>
 
         {/* Actions */}
-        <div className="flex items-center gap-2 md:flex-col md:items-stretch">
-          <button onClick={() => onApply(o)} className="btn-primary min-h-11 flex-1 px-6 text-sm md:flex-none">Apply Now</button>
-          <button onClick={() => onSave(o)} aria-pressed={saved} aria-label={saved ? `Remove ${o.name} from saved offers` : `Save ${o.name} offer`} className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors ${saved ? "bg-flame-50 text-flame-600" : "text-muted ring-1 ring-line hover:bg-brand-50 hover:text-brand-700"}`}>
-            <Icon name="Heart" size={16} fill={saved ? "currentColor" : "none"} /> <span className="hidden md:inline">{saved ? "Saved" : "Save"}</span>
+        <div className="flex items-center gap-2">
+          <button onClick={() => onApply(o)} className="btn-primary min-h-10 flex-1 px-5 text-sm md:flex-none">Apply Now</button>
+          <button onClick={() => onSave(o)} aria-pressed={saved} aria-label={saved ? `Remove ${o.name} from saved offers` : `Save ${o.name} offer`} className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors ${saved ? "bg-flame-50 text-flame-600" : "text-muted ring-1 ring-line hover:bg-brand-50 hover:text-brand-700"}`}>
+            <Icon name="Heart" size={16} fill={saved ? "currentColor" : "none"} /> <span className="hidden xl:inline">{saved ? "Saved" : "Save"}</span>
           </button>
         </div>
       </div>
@@ -141,13 +141,13 @@ function OfferCard({ o, best, saved, onSave, compared, onCompare, compareDisable
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-1.5 sm:px-4">
-        <label className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-medium ${compareDisabled && !compared ? "opacity-50" : "cursor-pointer"}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line px-3 py-0.5 sm:px-4">
+        <label className={`inline-flex min-h-10 items-center gap-2 rounded-xl px-2 text-sm font-medium ${compareDisabled && !compared ? "opacity-50" : "cursor-pointer"}`}>
           <input type="checkbox" checked={compared} disabled={compareDisabled && !compared} onChange={() => onCompare(o.id)} className="size-5 rounded accent-brand-700" />
           Add to compare
         </label>
         <span className="hidden text-xs text-muted sm:block">Processing fee {o.fee}</span>
-        <button onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls={`d-${o.id}`} className="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-brand-700">
+        <button onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-controls={`d-${o.id}`} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-brand-700">
           {open ? "Hide" : "Show"} details <Icon name="ChevronDown" size={16} className={`transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
         </button>
       </div>
@@ -345,7 +345,7 @@ export default function Offers() {
         </div>
 
         {offers.length ? (
-          <ul ref={listRef} className="mt-6 grid gap-5">
+          <ul ref={listRef} className="mt-5 grid gap-4">
             {offers.map((o) => (
               <OfferCard
                 key={o.id}
@@ -361,7 +361,7 @@ export default function Offers() {
             ))}
           </ul>
         ) : (
-          <div className="mt-10 rounded-3xl border border-dashed border-brand-200 bg-white p-10 text-center">
+          <div className="mt-8 rounded-3xl border border-dashed border-brand-200 bg-white p-8 text-center">
             <p className="font-display text-xl font-bold">No offers match these filters</p>
             <p className="mt-1 text-muted">Try removing a filter, or lower the loan amount.</p>
             <button onClick={clearAll} className="btn-primary mt-5">Clear filters</button>
@@ -393,7 +393,7 @@ export default function Offers() {
       )}
 
       <Dialog open={compareOpen} onClose={() => setCompareOpen(false)} labelledBy="cmp-title" wide>
-        <div className="max-h-[85dvh] overflow-auto p-6 sm:p-8">
+        <div className="max-h-[85dvh] overflow-auto p-6 sm:p-6">
           <div className="flex items-center justify-between">
             <h2 id="cmp-title" className="text-2xl font-bold">Compare offers</h2>
             <button onClick={() => setCompareOpen(false)} className="grid size-11 place-items-center rounded-xl hover:bg-brand-50" aria-label="Close comparison"><Icon name="X" size={20} /></button>
@@ -443,7 +443,7 @@ export default function Offers() {
 
       <Dialog open={!!applied} onClose={() => setApplied(null)} labelledBy="ok-title">
         {applied && (
-          <div className="p-8 text-center">
+          <div className="p-6 text-center">
             <span className="mx-auto grid size-16 place-items-center rounded-full bg-green-100 text-success"><Icon name="Check" size={32} strokeWidth={2.5} /></span>
             <h2 id="ok-title" className="mt-5 text-2xl font-bold">Application started!</h2>
             <p className="mt-2 text-muted">

@@ -64,12 +64,12 @@ function OtpInput({ value, onChange, invalid }) {
 function Field({ id, label, hint, error, lead, children }) {
   return (
     <div>
-      <label htmlFor={id} className="block font-medium">{label}</label>
-      <div className={`mt-2 flex items-center rounded-2xl border-2 bg-white px-4 transition-colors focus-within:ring-4 ${error ? "border-red-600 focus-within:ring-red-100" : "border-line focus-within:border-brand-600 focus-within:ring-brand-100"}`}>
+      <label htmlFor={id} className="block text-[15px] font-medium">{label}</label>
+      <div className={`mt-1.5 flex items-center rounded-xl border-2 bg-white px-3.5 transition-colors focus-within:ring-4 ${error ? "border-red-600 focus-within:ring-red-100" : "border-line focus-within:border-brand-600 focus-within:ring-brand-100"}`}>
         {lead}
         {children}
       </div>
-      <p id={`${id}-msg`} role={error ? "alert" : undefined} className={`mt-1.5 min-h-5 text-sm ${error ? "text-red-700" : "text-muted"}`}>{error || hint}</p>
+      <p id={`${id}-msg`} role={error ? "alert" : undefined} className={`mt-1 min-h-5 text-[13px] ${error ? "text-red-700" : "text-muted"}`}>{error || hint}</p>
     </div>
   );
 }
@@ -110,7 +110,8 @@ export default function Login() {
     () => {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
-        gsap.from(".login-anim", { y: 18, autoAlpha: 0, filter: "blur(6px)", duration: 0.7, stagger: 0.05, ease: "expo.out", clearProps: "filter" });
+        // fromTo + clearProps: the Send OTP button has a CSS transform transition that a plain from() could get stuck on.
+        gsap.fromTo(".login-anim", { y: 18, autoAlpha: 0, filter: "blur(6px)" }, { y: 0, autoAlpha: 1, filter: "blur(0px)", duration: 0.7, stagger: 0.05, ease: "expo.out", clearProps: "transform,filter" });
         if (step === "details") {
           gsap.from(".perk", { x: -24, autoAlpha: 0, duration: 0.8, stagger: 0.1, ease: "expo.out", delay: 0.15 });
           gsap.from(".track-step", { scaleX: 0, transformOrigin: "left", duration: 0.9, stagger: 0.18, ease: "expo.out", delay: 0.5 });
@@ -188,20 +189,20 @@ export default function Login() {
   return (
     <div ref={root} className="grid min-h-[calc(100dvh-72px)] lg:grid-cols-[1fr_1.1fr]">
       {/* Brand panel */}
-      <div className="relative hidden overflow-hidden bg-brand-900 p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
+      <div className="relative hidden overflow-hidden bg-brand-900 p-9 text-white lg:flex lg:flex-col lg:justify-between xl:p-12">
         <div className="grain-grid pointer-events-none absolute inset-0 opacity-40" />
         <div className="pointer-events-none absolute -bottom-40 -left-24 size-[28rem] rounded-full bg-flame-500/25 blur-[110px]" />
         <div className="pointer-events-none absolute -top-24 right-0 size-72 rounded-full bg-brand-500/30 blur-[90px]" />
         <Logo tone="light" className="relative h-10" />
 
         <div className="relative">
-          <h2 className="max-w-md text-5xl leading-[1.04] font-extrabold xl:text-6xl">
+          <h2 className="max-w-md text-4xl leading-[1.04] font-extrabold xl:text-5xl">
             One account. Every offer you’ve <span className="text-flame-400">found.</span>
           </h2>
-          <ul className="mt-10 grid gap-4">
+          <ul className="mt-6 grid gap-3">
             {PERKS.map(([icon, text]) => (
-              <li key={text} className="perk flex items-center gap-4 text-lg text-brand-100">
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/10 text-flame-400 ring-1 ring-white/10"><Icon name={icon} size={22} /></span>
+              <li key={text} className="perk flex items-center gap-3 text-base text-brand-100">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/10 text-flame-400 ring-1 ring-white/10"><Icon name={icon} size={20} /></span>
                 {text}
               </li>
             ))}
@@ -230,15 +231,15 @@ export default function Login() {
       </div>
 
       {/* Form */}
-      <div className="flex items-center justify-center bg-gradient-to-b from-brand-50 to-paper px-4 py-12 sm:py-16">
+      <div className="flex items-center justify-center bg-gradient-to-b from-brand-50 to-paper px-4 py-9 sm:py-12">
         <div className="w-full max-w-md">
-          <div className="rounded-[28px] border border-line bg-white p-6 shadow-[0_30px_60px_-40px_rgb(36_16_82/0.45)] sm:p-9">
+          <div className="rounded-[28px] border border-line bg-white p-6 shadow-[0_30px_60px_-40px_rgb(36_16_82/0.45)] sm:p-7">
             {step === "details" ? (
               <form onSubmit={sendOtp} noValidate>
-                <h1 className="login-anim text-3xl font-bold sm:text-4xl">Log in or sign up</h1>
-                <p className="login-anim mt-2 text-muted">New to AvodahLoans? Your account is created in the same step.</p>
+                <h1 className="login-anim text-3xl font-bold sm:text-3xl">Log in or sign up</h1>
+                <p className="login-anim mt-1.5 text-[15px] text-muted">New to AvodahLoans? Your account is created in the same step.</p>
 
-                <div role="radiogroup" aria-label="Sign in with" className="login-anim relative mt-7 grid grid-cols-2 rounded-2xl bg-brand-50 p-1 ring-1 ring-brand-100">
+                <div role="radiogroup" aria-label="Sign in with" className="login-anim relative mt-5 grid grid-cols-2 rounded-2xl bg-brand-50 p-1 ring-1 ring-brand-100">
                   <span
                     aria-hidden="true"
                     className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-xl bg-white shadow-[0_4px_14px_-6px_rgb(36_16_82/0.35)] transition-transform duration-300 ease-out-expo"
@@ -258,7 +259,7 @@ export default function Login() {
                   ))}
                 </div>
 
-                <div className="mt-6 grid gap-1">
+                <div className="mt-4 grid gap-1">
                   <div className="login-anim">
                     <Field id="l-name" label="Full name" hint="As on your PAN card — lenders match this." error={errors.name} lead={<Icon name="UserRound" size={18} className="shrink-0 text-muted" />}>
                       <input
@@ -269,7 +270,7 @@ export default function Login() {
                         onChange={(e) => { setErrors((x) => ({ ...x, name: "" })); setName(e.target.value.replace(/[^A-Za-z .'-]/g, "").slice(0, 80)); }}
                         aria-invalid={!!errors.name}
                         aria-describedby="l-name-msg"
-                        className="min-h-13 w-full bg-transparent px-3 text-lg font-medium outline-none placeholder:font-normal placeholder:text-muted/70"
+                        className="min-h-11 w-full bg-transparent px-3 text-base font-medium outline-none placeholder:font-normal placeholder:text-muted/70"
                       />
                     </Field>
                   </div>
@@ -288,7 +289,7 @@ export default function Login() {
                           onChange={(e) => { setErrors((x) => ({ ...x, contact: "" })); setPhone(stripCountryCode(e.target.value).slice(0, 10)); }}
                           aria-invalid={!!errors.contact}
                           aria-describedby="l-contact-msg"
-                          className="min-h-13 w-full bg-transparent px-3 font-display text-xl font-bold tracking-wider tabular-nums outline-none placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:tracking-normal placeholder:text-muted/70"
+                          className="min-h-11 w-full bg-transparent px-3 font-display text-lg font-bold tracking-wider tabular-nums outline-none placeholder:font-sans placeholder:text-lg placeholder:font-normal placeholder:tracking-normal placeholder:text-muted/70"
                         />
                       </Field>
                     ) : (
@@ -306,7 +307,7 @@ export default function Login() {
                           onChange={(e) => { setErrors((x) => ({ ...x, contact: "" })); setEmail(e.target.value.replace(/\s/g, "").slice(0, 120)); }}
                           aria-invalid={!!errors.contact}
                           aria-describedby="l-contact-msg"
-                          className="min-h-13 w-full bg-transparent px-3 text-lg font-medium outline-none placeholder:font-normal placeholder:text-muted/70"
+                          className="min-h-11 w-full bg-transparent px-3 text-base font-medium outline-none placeholder:font-normal placeholder:text-muted/70"
                         />
                       </Field>
                     )}
@@ -314,16 +315,16 @@ export default function Login() {
                 </div>
 
                 {method === "phone" && (
-                  <label className="login-anim mt-1 flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+                  <label className="login-anim flex min-h-10 cursor-pointer items-center gap-3 text-sm">
                     <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} className="size-5 shrink-0 rounded accent-brand-700" />
                     <span>Send loan updates on <strong className="font-semibold">WhatsApp</strong></span>
                   </label>
                 )}
 
-                <button type="submit" disabled={busy} className="login-anim btn-primary mt-6 min-h-14 w-full text-base">
+                <button type="submit" disabled={busy} className="login-anim btn-primary mt-4 min-h-12 w-full text-base">
                   {busy ? <Spinner /> : <>Send OTP <Icon name="ArrowRight" size={18} /></>}
                 </button>
-                <p className="login-anim mt-5 text-center text-xs leading-relaxed text-muted">
+                <p className="login-anim mt-3 text-center text-xs leading-relaxed text-muted">
                   By continuing you agree to our Terms and Privacy Policy and consent to be contacted about your loan.
                 </p>
               </form>
@@ -333,7 +334,7 @@ export default function Login() {
                   <Icon name="ArrowLeft" size={18} /> Edit details
                 </button>
                 <span className="login-anim mt-3 grid size-14 place-items-center rounded-2xl bg-brand-700 text-white"><Icon name="KeyRound" size={26} /></span>
-                <h1 className="login-anim mt-5 text-3xl font-bold sm:text-4xl">Verify your {method === "phone" ? "mobile" : "email"}</h1>
+                <h1 className="login-anim mt-5 text-3xl font-bold sm:text-3xl">Verify your {method === "phone" ? "mobile" : "email"}</h1>
                 <p className="login-anim mt-2 text-muted">
                   Hi {name.trim().split(" ")[0]}, enter the 6-digit code sent to <strong className="text-ink [overflow-wrap:anywhere]">{shown}</strong>
                 </p>
@@ -350,7 +351,7 @@ export default function Login() {
                   <p className="login-anim rounded-xl bg-flame-50 px-3 py-2 text-sm text-flame-600 ring-1 ring-flame-100">Demo mode (server offline) — enter any 6 digits.</p>
                 ) : null}
 
-                <button type="submit" disabled={busy} className="login-anim btn-primary mt-5 min-h-14 w-full text-base">
+                <button type="submit" disabled={busy} className="login-anim btn-primary mt-5 min-h-12 w-full text-base">
                   {busy ? <Spinner /> : "Verify & continue"}
                 </button>
                 <p className="login-anim mt-5 text-center text-sm text-muted">
@@ -364,7 +365,7 @@ export default function Login() {
             <Captcha ref={captcha} className="mt-4 flex justify-center empty:hidden" />
           </div>
 
-          <p className="mt-8 text-center text-sm text-muted">
+          <p className="mt-6 text-center text-sm text-muted">
             Just browsing? <Link to="/search" className="font-semibold text-brand-700 underline-offset-4 hover:underline">Search loans without logging in</Link>
           </p>
         </div>
