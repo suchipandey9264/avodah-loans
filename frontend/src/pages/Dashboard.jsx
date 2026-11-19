@@ -6,7 +6,7 @@ import { clearActivity, removeSearch, toggleSaved, updateProfile, useActivity } 
 import { EMPLOYMENT, LENDERS, empById, loanById } from "../lib/loans";
 import { formatINR, formatShort } from "../lib/emi";
 import { gsap, useGSAP, MOTION_OK } from "../lib/motion";
-import { Icon } from "../components/ui";
+import { Icon, LoanIcon } from "../components/ui";
 
 const TABS = [
   { id: "overview", label: "Overview", icon: "LayoutDashboard" },
@@ -56,12 +56,118 @@ function eligibleAmount(income, emis) {
 
 function Empty({ icon, title, text, to, cta }) {
   return (
-    <div className="rounded-3xl border border-dashed border-brand-200 bg-white p-10 text-center">
-      <span className="mx-auto grid size-14 place-items-center rounded-2xl bg-brand-50 text-brand-700"><Icon name={icon} size={26} /></span>
-      <p className="mt-4 font-display text-xl font-bold">{title}</p>
+    <div className="rounded-2xl border border-dashed border-brand-200 bg-white p-10 text-center">
+      <span className="mx-auto grid size-11 place-items-center rounded-2xl bg-brand-50 text-brand-700"><Icon name={icon} size={26} /></span>
+      <p className="mt-4 font-display text-lg font-bold">{title}</p>
       <p className="mx-auto mt-1 max-w-sm text-muted">{text}</p>
-      {to && <Link to={to} className="btn-primary mt-5">{cta}</Link>}
+      {to && <Link to={to} className="btn-primary mt-4">{cta}</Link>}
     </div>
+  );
+}
+
+const lenderByName = (name) => LENDERS.find((l) => l.name === name);
+
+/** One request type (credit reports, callbacks): what it is, past requests with status, and how to make one. */
+function RequestCard({ icon, tone, title, sub, list, label, to, cta }) {
+  return (
+    <section className="dash-anim flex flex-col rounded-2xl border border-line bg-white p-4 sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className={`grid size-10 shrink-0 place-items-center rounded-xl text-white shadow-md ${tone}`}><Icon name={icon} size={18} /></span>
+        <div className="min-w-0 flex-1 leading-tight">
+          <h3 className="flex items-center gap-2 text-base font-bold">
+            {title}
+            {list.length > 0 && <span className="rounded-full bg-brand-50 px-2 text-xs font-semibold text-brand-700 tabular-nums">{list.length}</span>}
+          </h3>
+          <p className="mt-1 text-sm text-muted">{sub}</p>
+        </div>
+      </div>
+
+      {list.length ? (
+        <ul className="mt-4 grid gap-2">
+          {list.map((r) => (
+            <li key={r.ts} className="flex items-center gap-3 rounded-xl bg-brand-50/50 px-3 py-2.5">
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white text-brand-700 ring-1 ring-brand-100"><Icon name="Check" size={14} strokeWidth={2.5} /></span>
+              <span className="min-w-0 flex-1 leading-tight">
+                <span className="block truncate text-sm font-medium">{label(r)}</span>
+                <span className="text-xs text-muted">{ago(r.ts)}</span>
+              </span>
+              <span className="shrink-0 rounded-full bg-white px-2.5 py-0.5 text-xs font-semibold text-brand-700 ring-1 ring-brand-200">Requested</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-4 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 px-3 py-2.5 text-sm text-muted">No requests yet.</p>
+      )}
+
+      <Link to={to} className="mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 self-start rounded-xl bg-brand-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-800">
+        {list.length ? "Request again" : cta} <Icon name="ArrowRight" size={14} />
+      </Link>
+    </section>
+  );
+}
+
+/** Comparisons the user opened on the offers page: loan type, the lenders side by side, and a way back in. */
+function Comparisons({ list }) {
+  return (
+    <section className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="flex items-center gap-2 text-base font-bold">
+          <Icon name="Scale" size={20} className="text-brand-700" />
+          Comparisons
+          {list.length > 0 && <span className="rounded-full bg-brand-50 px-2 text-xs font-semibold text-brand-700 tabular-nums">{list.length}</span>}
+        </h3>
+        <Link to="/search" className="inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+          New comparison <Icon name="ArrowRight" size={14} />
+        </Link>
+      </div>
+
+      {list.length ? (
+        <ul className="mt-4 grid gap-3">
+          {list.map((c) => {
+            const type = loanById(c.type);
+            return (
+              <li key={c.ts} className="rounded-xl border border-line bg-brand-50/40 p-3 sm:p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <LoanIcon name={type.icon} size={16} className="size-8" />
+                    <div className="leading-tight">
+                      <p className="text-sm font-semibold">{type.label}</p>
+                      <p className="text-xs text-muted">{c.names.length} lenders · {ago(c.ts)}</p>
+                    </div>
+                  </div>
+                  <Link to={`/search?type=${type.id}`} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-semibold text-brand-700 ring-1 ring-brand-200 transition-colors hover:bg-brand-50">
+                    <Icon name="RotateCcw" size={13} /> Compare again
+                  </Link>
+                </div>
+
+                {/* Lenders side by side, "vs" between them */}
+                <ol className="mt-3 flex flex-wrap items-center gap-2" aria-label="Lenders compared">
+                  {c.names.map((name, i) => {
+                    const l = lenderByName(name);
+                    return (
+                      <li key={name} className="flex items-center gap-2">
+                        {i > 0 && <span aria-hidden="true" className="grid size-6 place-items-center rounded-full bg-brand-700 text-[10px] font-bold text-white">vs</span>}
+                        <span className="flex items-center gap-2 rounded-lg bg-white py-1.5 pr-3 pl-1.5 ring-1 ring-line">
+                          <span className="grid h-7 w-10 place-items-center">
+                            {l ? <img src={`/bank-logos/${l.logo}.png`} alt="" className="max-h-full max-w-full object-contain" /> : <Icon name="Landmark" size={16} className="text-muted" />}
+                          </span>
+                          <span className="text-sm font-medium">{name}</span>
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-brand-200 bg-brand-50/40 p-4">
+          <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-white text-brand-700 ring-1 ring-brand-100"><Icon name="Scale" size={18} /></span>
+          <p className="flex-1 text-sm text-muted">Tick up to 3 offers on the results page to compare rates, EMIs and fees side by side.</p>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -69,7 +175,7 @@ function SectionTitle({ title, sub, action }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
       <div>
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-xl font-bold">{title}</h2>
         {sub && <p className="mt-1 text-muted">{sub}</p>}
       </div>
       {action}
@@ -81,7 +187,7 @@ function Text({ label, name, defaultValue, hint, className = "", ...rest }) {
   return (
     <label className={`grid content-start gap-1.5 text-sm font-medium ${className}`}>
       {label}
-      <input name={name} defaultValue={defaultValue ?? ""} className="field" {...rest} />
+      <input name={name} defaultValue={defaultValue ?? ""} className="field min-h-10 px-3.5 text-[15px]" {...rest} />
       {hint && <span className="text-xs font-normal text-muted">{hint}</span>}
     </label>
   );
@@ -92,7 +198,7 @@ function Select({ label, name, defaultValue, options, className = "" }) {
     <label className={`grid content-start gap-1.5 text-sm font-medium ${className}`}>
       {label}
       <span className="relative">
-        <select name={name} defaultValue={defaultValue ?? ""} className="field appearance-none pr-10">
+        <select name={name} defaultValue={defaultValue ?? ""} className="field min-h-10 appearance-none px-3.5 pr-10 text-[15px]">
           <option value="">Select</option>
           {options.map((o) => <option key={o} value={o}>{o}</option>)}
         </select>
@@ -114,7 +220,7 @@ function Rupees({ label, name, defaultValue, hint, onValue, className = "" }) {
           inputMode="numeric"
           value={v ? inr.format(v) : ""}
           onChange={(e) => { const n = Number(e.target.value.replace(/\D/g, "").slice(0, 11)); setV(n); onValue?.(n); }}
-          className="min-h-12 w-full bg-transparent px-2 text-base tabular-nums outline-none"
+          className="min-h-10 w-full bg-transparent px-2 text-[15px] tabular-nums outline-none"
         />
         <input type="hidden" name={name} value={v || ""} />
         {v >= 1e5 && <span className="shrink-0 text-xs font-semibold text-brand-700">{formatShort(v)}</span>}
@@ -126,16 +232,16 @@ function Rupees({ label, name, defaultValue, hint, onValue, className = "" }) {
 
 function Fieldset({ icon, title, sub, children }) {
   return (
-    <fieldset className="dash-anim rounded-3xl border border-line bg-white p-5 sm:p-7">
+    <fieldset className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5">
       <legend className="sr-only">{title}</legend>
       <div className="flex items-start gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-700"><Icon name={icon} size={20} /></span>
         <div>
-          <p className="font-display text-lg font-bold">{title}</p>
+          <p className="font-display text-base font-bold">{title}</p>
           {sub && <p className="text-sm text-muted">{sub}</p>}
         </div>
       </div>
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">{children}</div>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">{children}</div>
     </fieldset>
   );
 }
@@ -144,7 +250,7 @@ function ApplicationCard({ a }) {
   const t = loanById(a.type);
   const stage = 1; // submitted is complete; advisor call is next
   return (
-    <li className="dash-anim rounded-3xl border border-line bg-white p-5 sm:p-6">
+    <li className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <Link to={`/lenders/${a.lenderId}`} className="flex items-center gap-3">
           <span className="grid h-12 w-16 shrink-0 place-items-center rounded-xl bg-white p-1 ring-1 ring-line"><img src={`/bank-logos/${a.logo}.png`} alt="" className="max-h-full max-w-full object-contain" /></span>
@@ -160,7 +266,7 @@ function ApplicationCard({ a }) {
         <div><dt className="text-xs text-muted">Rate from</dt><dd className="font-semibold tabular-nums">{a.rate.toFixed(2)}%</dd></div>
         <div><dt className="text-xs text-muted">EMI · {a.tenure} yrs</dt><dd className="font-semibold tabular-nums">{formatINR(a.emi)}</dd></div>
       </dl>
-      <ol className="mt-5 grid grid-cols-5 gap-1" aria-label="Application progress">
+      <ol className="mt-4 grid grid-cols-5 gap-1" aria-label="Application progress">
         {STAGES.map((s, i) => {
           const done = i < stage;
           const current = i === stage;
@@ -200,11 +306,11 @@ function EmploymentForm({ profile, onSaved }) {
   };
 
   return (
-    <form onSubmit={save} className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
-      <div className="grid gap-5">
-        <fieldset className="dash-anim rounded-3xl border border-line bg-white p-5 sm:p-7">
+    <form onSubmit={save} className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:items-start">
+      <div className="grid gap-4">
+        <fieldset className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5">
           <legend className="sr-only">Employment type</legend>
-          <p className="font-display text-lg font-bold">How are you employed?</p>
+          <p className="font-display text-base font-bold">How are you employed?</p>
           <p className="text-sm text-muted">Lenders ask different questions for each profile.</p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Employment type">
             {EMPLOYMENT.map((x) => {
@@ -300,19 +406,19 @@ function EmploymentForm({ profile, onSaved }) {
       </div>
 
       {/* Live summary */}
-      <aside className="dash-anim relative overflow-hidden rounded-3xl bg-brand-900 p-6 text-white xl:sticky xl:top-24">
+      <aside className="dash-anim relative overflow-hidden rounded-2xl bg-brand-900 p-5 text-white xl:sticky xl:top-24">
         <div className="grain-grid pointer-events-none absolute inset-0 opacity-30" />
         <div className="relative">
-          <p className="font-display text-lg font-bold">What lenders will see</p>
+          <p className="font-display text-base font-bold">What lenders will see</p>
           <dl className="mt-4 grid gap-3 text-sm">
             <div className="flex justify-between gap-3"><dt className="text-brand-200">Profile</dt><dd className="text-right font-semibold">{info?.label ?? "—"}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-brand-200">Monthly income</dt><dd className="font-semibold tabular-nums">{income ? formatINR(income) : "—"}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-brand-200">Existing EMIs</dt><dd className="font-semibold tabular-nums">{formatINR(emis)}</dd></div>
             <div className="flex justify-between gap-3"><dt className="text-brand-200">EMI room (50% rule)</dt><dd className="font-semibold tabular-nums">{income ? formatINR(Math.max(0, income * 0.5 - emis)) : "—"}</dd></div>
           </dl>
-          <div className="mt-5 rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
+          <div className="mt-4 rounded-2xl bg-white/10 p-4 ring-1 ring-white/10">
             <p className="text-sm text-brand-100">You could borrow up to</p>
-            <p className="mt-1 font-display text-3xl font-bold text-white tabular-nums">{est ? formatShort(est) : "—"}</p>
+            <p className="mt-1 font-display text-2xl font-bold text-white tabular-nums">{est ? formatShort(est) : "—"}</p>
             <p className="mt-1 text-xs text-brand-200">Home loan estimate at 8.5% for 20 years. Final amount depends on the lender.</p>
           </div>
         </div>
@@ -402,18 +508,18 @@ export default function Dashboard() {
 
   return (
     <div ref={root} className="min-h-dvh bg-gradient-to-b from-brand-50 to-paper pb-24">
-      <div className="container-x pt-8 sm:pt-10">
+      <div className="container-x pt-6 sm:pt-8">
         {/* Header */}
-        <header className="dash-anim relative overflow-hidden rounded-[28px] border border-line bg-white p-5 shadow-[0_24px_50px_-36px_rgb(36_16_82/0.4)] sm:p-7">
+        <header className="dash-anim relative overflow-hidden rounded-3xl border border-line bg-white p-4 shadow-[0_24px_50px_-36px_rgb(36_16_82/0.4)] sm:p-5">
           <div aria-hidden="true" className="pointer-events-none absolute -top-24 -left-24 size-64 rounded-full bg-brand-100/70 blur-3xl" />
           <div className="relative flex flex-wrap items-center justify-between gap-x-8 gap-y-6">
             {/* Identity */}
             <div className="flex min-w-0 items-center gap-4">
-              <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 font-display text-2xl font-bold text-white shadow-[0_14px_28px_-14px_rgb(70_32_141/0.9)]">
+              <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 font-display text-xl font-bold text-white shadow-[0_14px_28px_-14px_rgb(70_32_141/0.9)]">
                 {initials || <Icon name="UserRound" size={28} />}
               </span>
               <div className="min-w-0">
-                <h1 className="text-3xl font-bold sm:text-4xl">Hi {first || "there"}</h1>
+                <h1 className="text-2xl font-bold sm:text-3xl">Hi {first || "there"}</h1>
                 <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted" aria-label="Account details">
                   <li className="inline-flex items-center gap-1.5 [overflow-wrap:anywhere]"><Icon name={user.phone ? "Phone" : "Mail"} size={14} className="shrink-0 text-brand-500" />{contactLabel(user)}</li>
                   {emp && <li className="inline-flex items-center gap-1.5"><Icon name={emp.icon} size={14} className="text-brand-500" />{emp.label}</li>}
@@ -425,7 +531,7 @@ export default function Dashboard() {
             <div className="flex w-full flex-wrap items-center gap-x-6 gap-y-4 sm:w-auto">
               {/* Completion ring */}
               <div className="flex items-center gap-3">
-                <span className="relative grid size-16 shrink-0 place-items-center" role="progressbar" aria-valuenow={complete} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completion">
+                <span className="relative grid size-12 shrink-0 place-items-center" role="progressbar" aria-valuenow={complete} aria-valuemin={0} aria-valuemax={100} aria-label="Profile completion">
                   <svg viewBox="0 0 64 64" className="absolute inset-0 -rotate-90" aria-hidden="true">
                     <circle cx="32" cy="32" r="27" fill="none" strokeWidth="6" className="stroke-brand-100" />
                     <circle
@@ -454,14 +560,14 @@ export default function Dashboard() {
               <span aria-hidden="true" className="hidden h-12 w-px bg-line sm:block" />
 
               <div className="flex flex-1 gap-2 sm:flex-none">
-                <Link to="/search" className="btn-primary min-h-11 flex-1 px-5 text-sm sm:flex-none"><Icon name="Search" size={16} /> New search</Link>
-                <Link to="/credit-score" className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-brand-700 ring-1 ring-brand-200 transition-colors hover:bg-brand-50 sm:flex-none"><Icon name="Gauge" size={16} /> Credit score</Link>
+                <Link to="/search" className="btn-primary min-h-10 flex-1 px-5 text-sm sm:flex-none"><Icon name="Search" size={16} /> New search</Link>
+                <Link to="/credit-score" className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-brand-700 ring-1 ring-brand-200 transition-colors hover:bg-brand-50 sm:flex-none"><Icon name="Gauge" size={16} /> Credit score</Link>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[230px_1fr]">
+        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[230px_1fr]">
           {/* Nav */}
           <nav aria-label="Dashboard sections" className="lg:sticky lg:top-24 lg:self-start">
             <ul className="no-scrollbar flex gap-1 overflow-x-auto rounded-2xl border border-line bg-white p-1.5 lg:grid">
@@ -470,7 +576,7 @@ export default function Dashboard() {
                 const dot = t.id === "employment" && !p.emp;
                 return (
                   <li key={t.id} className="shrink-0">
-                    <button onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-colors ${tab === t.id ? "bg-brand-700 text-white" : "hover:bg-brand-50"}`}>
+                    <button onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined} className={`flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium transition-colors ${tab === t.id ? "bg-brand-700 text-white" : "hover:bg-brand-50"}`}>
                       <Icon name={t.icon} size={18} />
                       <span className="flex-1 whitespace-nowrap">{t.label}</span>
                       {count > 0 && <span className={`rounded-full px-2 text-xs tabular-nums ${tab === t.id ? "bg-white/20" : "bg-brand-50 text-brand-700"}`}>{count}</span>}
@@ -480,43 +586,43 @@ export default function Dashboard() {
                 );
               })}
             </ul>
-            <button onClick={logout} className="mt-3 hidden min-h-11 w-full items-center gap-3 rounded-xl px-4 text-sm font-medium text-muted hover:bg-white hover:text-ink lg:flex">
+            <button onClick={logout} className="mt-3 hidden min-h-10 w-full items-center gap-3 rounded-xl px-4 text-sm font-medium text-muted hover:bg-white hover:text-ink lg:flex">
               <Icon name="LogOut" size={18} /> Log out
             </button>
           </nav>
 
           <div className="min-w-0">
             {tab === "overview" && (
-              <div className="grid gap-6">
+              <div className="grid gap-5">
                 {/* Next best step — changes with what the user has done so far */}
-                <div className="dash-anim relative flex flex-wrap items-center gap-4 overflow-hidden rounded-3xl border border-brand-200 bg-white p-5 sm:flex-nowrap sm:p-6">
+                <div className="dash-anim relative flex flex-wrap items-center gap-4 overflow-hidden rounded-2xl border border-brand-200 bg-white p-4 sm:flex-nowrap sm:p-5">
                   <span aria-hidden="true" className="pointer-events-none absolute -top-16 -left-16 size-48 rounded-full bg-brand-100 blur-2xl" />
-                  <span className="relative grid size-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-[0_12px_24px_-12px_rgb(70_32_141/0.8)]">
+                  <span className="relative grid size-11 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-800 text-white shadow-[0_12px_24px_-12px_rgb(70_32_141/0.8)]">
                     <Icon name={next.icon} size={24} />
                   </span>
                   <div className="relative min-w-0 flex-1 leading-tight">
                     <p className="text-xs font-semibold text-brand-600">Your next step</p>
-                    <p className="mt-1 font-display text-xl font-bold">{next.title}</p>
+                    <p className="mt-1 font-display text-lg font-bold">{next.title}</p>
                     <p className="mt-1 text-sm text-muted">{next.text}</p>
                   </div>
                   {next.to ? (
-                    <Link to={next.to} className="btn-primary relative min-h-11 w-full shrink-0 text-sm sm:w-auto">{next.cta} <Icon name="ArrowRight" size={16} /></Link>
+                    <Link to={next.to} className="btn-primary relative min-h-10 w-full shrink-0 text-sm sm:w-auto">{next.cta} <Icon name="ArrowRight" size={16} /></Link>
                   ) : (
-                    <button onClick={next.onClick} className="btn-primary relative min-h-11 w-full shrink-0 text-sm sm:w-auto">{next.cta} <Icon name="ArrowRight" size={16} /></button>
+                    <button onClick={next.onClick} className="btn-primary relative min-h-10 w-full shrink-0 text-sm sm:w-auto">{next.cta} <Icon name="ArrowRight" size={16} /></button>
                   )}
                 </div>
 
                 {/* Stats strip */}
-                <dl className="dash-anim grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-4">
+                <dl className="dash-anim grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
                   {[
                     ["FileText", "Applications", a.applications.length, "applications"],
                     ["Heart", "Saved offers", a.saved.length, "saved"],
                     ["History", "Searches", a.searches.length, "searches"],
                     ["Percent", "Best rate seen", bestRate ? `${bestRate.toFixed(2)}%` : "—", null],
                   ].map(([icon, label, value, to]) => (
-                    <div key={label} className="bg-white p-5">
+                    <div key={label} className="bg-white p-4">
                       <dt className="flex items-center gap-1.5 text-sm text-muted"><Icon name={icon} size={15} className="text-brand-500" />{label}</dt>
-                      <dd className="mt-1 font-display text-3xl font-bold tabular-nums">
+                      <dd className="mt-1 font-display text-2xl font-bold tabular-nums">
                         {to ? <button onClick={() => go(to)} className="rounded-lg hover:text-brand-700">{value}</button> : value}
                       </dd>
                     </div>
@@ -524,21 +630,21 @@ export default function Dashboard() {
                 </dl>
 
                 {/* What you could borrow */}
-                <section className="dash-anim rounded-3xl border border-line bg-white p-5 sm:p-7" aria-labelledby="borrow-title">
+                <section className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5" aria-labelledby="borrow-title">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h2 id="borrow-title" className="text-xl font-bold">What you could borrow</h2>
+                      <h2 id="borrow-title" className="text-lg font-bold">What you could borrow</h2>
                       <p className="mt-1 text-sm text-muted">Estimated from your income, keeping all EMIs within 50% of it — the rule most lenders use.</p>
                     </div>
                     <button onClick={() => go("employment")} className="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-brand-700 hover:bg-brand-50"><Icon name="Pencil" size={14} /> {income ? "Update income" : "Add income"}</button>
                   </div>
 
                   {income ? (
-                    <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                    <div className="mt-5 grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
                       {/* Income split */}
                       <div>
                         <p className="text-sm text-muted">Monthly income</p>
-                        <p className="font-display text-4xl font-bold tabular-nums">{formatINR(income)}</p>
+                        <p className="font-display text-3xl font-bold tabular-nums">{formatINR(income)}</p>
                         <div className="mt-4 flex h-4 overflow-hidden rounded-full bg-brand-100" role="img" aria-label={`Existing EMIs ${formatINR(emis)}, free EMI room ${formatINR(room)}, rest of income ${formatINR(income - emis - room)}`}>
                           <span className="h-full bg-brand-900 transition-[width] duration-700" style={{ width: `${Math.min(100, (emis / income) * 100)}%` }} />
                           <span className="h-full bg-brand-500 transition-[width] duration-700" style={{ width: `${(room / income) * 100}%` }} />
@@ -556,7 +662,7 @@ export default function Dashboard() {
                             </div>
                           ))}
                         </dl>
-                        <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
+                        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-line pt-4 text-sm">
                           <div><dt className="text-xs text-muted">Profile</dt><dd className="font-semibold">{emp?.label ?? "—"}</dd></div>
                           <div><dt className="text-xs text-muted">{e.businessName || e.practiceName ? "Business" : "Employer"}</dt><dd className="font-semibold">{e.company || e.businessName || e.practiceName || "—"}</dd></div>
                         </dl>
@@ -572,7 +678,7 @@ export default function Dashboard() {
                             >
                               <span className="row-span-2 grid size-10 place-items-center rounded-xl bg-brand-50 text-brand-700 transition-colors group-hover:bg-brand-700 group-hover:text-white"><Icon name={t.icon} size={18} /></span>
                               <span className="text-sm font-semibold">{t.label} <span className="font-normal text-muted">· from {t.from}% · {t.defaultTenure} yrs</span></span>
-                              <span className="row-span-2 text-right font-display text-lg font-bold tabular-nums">{amount >= t.min ? formatShort(amount) : "—"}</span>
+                              <span className="row-span-2 text-right font-display text-base font-bold tabular-nums">{amount >= t.min ? formatShort(amount) : "—"}</span>
                               <span className="h-1.5 overflow-hidden rounded-full bg-brand-100">
                                 <span className="block h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-700 transition-[width] duration-700" style={{ width: `${maxCap ? (amount / maxCap) * 100 : 0}%` }} />
                               </span>
@@ -583,20 +689,20 @@ export default function Dashboard() {
                       </ul>
                     </div>
                   ) : (
-                    <div className="mt-6 grid items-center gap-6 rounded-2xl bg-brand-50 p-6 sm:grid-cols-[1fr_auto]">
+                    <div className="mt-5 grid items-center gap-5 rounded-2xl bg-brand-50 p-5 sm:grid-cols-[1fr_auto]">
                       <div>
-                        <p className="font-display text-lg font-bold">See your borrowing power in seconds</p>
+                        <p className="font-display text-base font-bold">See your borrowing power in seconds</p>
                         <p className="mt-1 text-sm text-muted">Add your employment and income once — we’ll estimate how much you can borrow for every loan type.</p>
                       </div>
-                      <button onClick={() => go("employment")} className="btn-primary min-h-11 text-sm">Add employment details</button>
+                      <button onClick={() => go("employment")} className="btn-primary min-h-10 text-sm">Add employment details</button>
                     </div>
                   )}
                 </section>
 
-                <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
-                  <section className="dash-anim rounded-3xl border border-line bg-white p-5 sm:p-6">
+                <div className="grid gap-5 xl:grid-cols-[1.3fr_1fr]">
+                  <section className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5">
                     <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-bold">Latest application</h2>
+                      <h2 className="text-lg font-bold">Latest application</h2>
                       {a.applications.length > 1 && <button onClick={() => go("applications")} className="text-sm font-semibold text-brand-700">View all</button>}
                     </div>
                     {a.applications[0] ? (
@@ -606,8 +712,8 @@ export default function Dashboard() {
                     )}
                   </section>
 
-                  <section className="dash-anim rounded-3xl border border-line bg-white p-5 sm:p-6">
-                    <h2 className="text-xl font-bold">Recent activity</h2>
+                  <section className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5">
+                    <h2 className="text-lg font-bold">Recent activity</h2>
                     {feed.length ? (
                       <ol className="relative mt-4 grid gap-4 before:absolute before:top-2 before:bottom-2 before:left-[17px] before:w-px before:bg-line">
                         {feed.slice(0, 7).map((ev, i) => {
@@ -651,9 +757,9 @@ export default function Dashboard() {
               <div>
                 <SectionTitle title="Applications" sub="Track every loan you’ve applied for." />
                 {a.applications.length ? (
-                  <ul className="mt-5 grid gap-4">{a.applications.map((x) => <ApplicationCard key={x.ref} a={x} />)}</ul>
+                  <ul className="mt-4 grid gap-4">{a.applications.map((x) => <ApplicationCard key={x.ref} a={x} />)}</ul>
                 ) : (
-                  <div className="mt-5"><Empty icon="FileText" title="No applications yet" text="Find an offer you like and tap Apply Now — you can track it here." to="/search" cta="Search Loan" /></div>
+                  <div className="mt-4"><Empty icon="FileText" title="No applications yet" text="Find an offer you like and tap Apply Now — you can track it here." to="/search" cta="Search Loan" /></div>
                 )}
               </div>
             )}
@@ -662,9 +768,9 @@ export default function Dashboard() {
               <div>
                 <SectionTitle title="Saved offers" sub="Your shortlist across every search." />
                 {a.saved.length ? (
-                  <ul className="mt-5 grid gap-3">
+                  <ul className="mt-4 grid gap-3">
                     {a.saved.map((s) => (
-                      <li key={s.key} className="dash-anim grid gap-4 rounded-3xl border border-line bg-white p-5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_auto] md:items-center">
+                      <li key={s.key} className="dash-anim grid gap-4 rounded-2xl border border-line bg-white p-4 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1.6fr)_auto] md:items-center">
                         <Link to={`/lenders/${s.lenderId}`} className="flex items-center gap-3">
                           <span className="grid h-12 w-16 shrink-0 place-items-center rounded-xl bg-white p-1 ring-1 ring-line"><img src={`/bank-logos/${s.logo}.png`} alt="" className="max-h-full max-w-full object-contain" /></span>
                           <span className="leading-tight"><span className="block font-bold">{s.name}</span><span className="text-sm text-muted">{loanById(s.type).label} · saved {ago(s.ts)}</span></span>
@@ -684,7 +790,7 @@ export default function Dashboard() {
                     ))}
                   </ul>
                 ) : (
-                  <div className="mt-5"><Empty icon="Heart" title="Nothing saved yet" text="Tap Save on any offer to shortlist it here." to="/search" cta="Browse offers" /></div>
+                  <div className="mt-4"><Empty icon="Heart" title="Nothing saved yet" text="Tap Save on any offer to shortlist it here." to="/search" cta="Browse offers" /></div>
                 )}
               </div>
             )}
@@ -693,7 +799,7 @@ export default function Dashboard() {
               <div>
                 <SectionTitle title="Search history" sub="Run any past search again in one tap." />
                 {a.searches.length ? (
-                  <ul className="mt-5 grid gap-3">
+                  <ul className="mt-4 grid gap-3">
                     {a.searches.map((s) => {
                       const t = loanById(s.type);
                       return (
@@ -712,50 +818,39 @@ export default function Dashboard() {
                     })}
                   </ul>
                 ) : (
-                  <div className="mt-5"><Empty icon="History" title="No searches yet" text="Every loan search you run is saved here so you can come back to it." to="/search" cta="Search Loan" /></div>
+                  <div className="mt-4"><Empty icon="History" title="No searches yet" text="Every loan search you run is saved here so you can come back to it." to="/search" cta="Search Loan" /></div>
                 )}
               </div>
             )}
 
             {tab === "requests" && (
-              <div className="grid gap-6">
+              <div className="grid gap-5">
                 <SectionTitle title="Requests" sub="Credit reports, callbacks and comparisons." />
-                {[
-                  ["Gauge", "Credit report requests", a.credit, (r) => `Free credit report for ${r.name}`, "/credit-score", "Get free credit report"],
-                  ["PhoneCall", "Advisor callbacks", a.callbacks, (r) => `Callback for ${r.name}`, "/support", "Request a callback"],
-                  ["Scale", "Comparisons", a.compares, (r) => `${loanById(r.type).label}: ${r.names.join(" vs ")}`, null, null],
-                ].map(([icon, title, list, text, to, cta]) => (
-                  <section key={title} className="dash-anim rounded-3xl border border-line bg-white p-5 sm:p-6">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h3 className="flex items-center gap-2 text-lg font-bold"><Icon name={icon} size={20} className="text-brand-700" />{title}</h3>
-                      {to && <Link to={to} className="text-sm font-semibold text-brand-700">{cta}</Link>}
-                    </div>
-                    {list.length ? (
-                      <ul className="mt-3 divide-y divide-line">
-                        {list.map((r) => (
-                          <li key={r.ts} className="flex items-center justify-between gap-3 py-3 text-sm">
-                            <span>{text(r)}</span>
-                            <span className="shrink-0 text-muted">{ago(r.ts)}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="mt-2 text-sm text-muted">None yet.</p>
-                    )}
-                  </section>
-                ))}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <RequestCard
+                    icon="Gauge" tone="bg-gradient-to-br from-brand-500 to-brand-800" title="Credit reports"
+                    sub="Free report — checking it never lowers your score."
+                    list={a.credit} label={(r) => `Credit report for ${r.name}`} to="/credit-score" cta="Get free credit report"
+                  />
+                  <RequestCard
+                    icon="PhoneCall" tone="bg-gradient-to-br from-flame-500 to-sun-400" title="Advisor callbacks"
+                    sub="A loan advisor calls you back — free of charge."
+                    list={a.callbacks} label={(r) => `Callback for ${r.name}`} to="/support" cta="Request a callback"
+                  />
+                </div>
+                <Comparisons list={a.compares} />
               </div>
             )}
 
             {tab === "employment" && (
-              <div className="grid gap-5">
+              <div className="grid gap-4">
                 <SectionTitle title="Employment details" sub="The same details banks ask for — fill them once, use them for every application." />
                 <EmploymentForm key={JSON.stringify(p.employment ?? {}) + (p.emp ?? "")} profile={p} onSaved={flash} />
               </div>
             )}
 
             {tab === "profile" && (
-              <div className="grid gap-5">
+              <div className="grid gap-4">
                 <SectionTitle title="Personal details" sub="Used to pre-fill applications. Never shared without your consent." />
                 <form
                   key={JSON.stringify(p)}
@@ -767,7 +862,7 @@ export default function Dashboard() {
                     syncProfile(f, flash);
                     flash("Personal details saved");
                   }}
-                  className="grid gap-5"
+                  className="grid gap-4"
                 >
                   <Fieldset icon="UserRound" title="About you" sub="As on your PAN card.">
                     <Text label="Full name" name="name" defaultValue={fullName} autoComplete="name" required className="sm:col-span-2" />
@@ -802,7 +897,7 @@ export default function Dashboard() {
                   <div><button className="btn-primary">Save personal details</button></div>
                 </form>
 
-                <div className="dash-anim rounded-3xl border border-red-200 bg-white p-6">
+                <div className="dash-anim rounded-2xl border border-red-200 bg-white p-5">
                   <h3 className="font-bold">Privacy</h3>
                   <p className="mt-1 text-sm text-muted">Clear your searches, saved offers and activity from this device. Applications already submitted to lenders aren’t affected.</p>
                   {confirmClear ? (
@@ -815,7 +910,7 @@ export default function Dashboard() {
                     <button onClick={() => setConfirmClear(true)} className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-xl border border-red-200 px-4 text-sm font-semibold text-red-700 hover:bg-red-50"><Icon name="Trash2" size={16} /> Clear activity</button>
                   )}
                 </div>
-                <button onClick={logout} className="inline-flex min-h-11 items-center gap-2 justify-self-start rounded-xl px-2 font-medium text-muted hover:text-ink lg:hidden"><Icon name="LogOut" size={18} /> Log out</button>
+                <button onClick={logout} className="inline-flex min-h-10 items-center gap-2 justify-self-start rounded-xl px-2 font-medium text-muted hover:text-ink lg:hidden"><Icon name="LogOut" size={18} /> Log out</button>
               </div>
             )}
           </div>

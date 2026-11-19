@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { EMPLOYMENT, LOAN_TYPES, loanById } from "../lib/loans";
 import { emi, formatINR, formatShort } from "../lib/emi";
 import { gsap, useGSAP, MOTION_OK, prefersReducedMotion } from "../lib/motion";
@@ -23,15 +23,16 @@ const TIPS = {
 };
 
 /* ---------- Journey header: what you're searching for + progress ---------- */
-function Journey({ step, type, emp }) {
+/** Finished steps are buttons: `onGo(stepId)` jumps back to that step. */
+function Journey({ step, type, emp, onGo }) {
   const current = STEPS.findIndex((s) => s.id === step);
   const empLabel = EMPLOYMENT.find((e) => e.id === emp)?.label;
   return (
-    <header className="relative overflow-hidden border-b border-line bg-gradient-to-r from-brand-50 via-white to-flame-50/40 px-6 py-5 sm:px-10">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <header className="relative overflow-hidden border-b border-line bg-gradient-to-r from-brand-50 via-white to-flame-50/40 px-5 py-3 sm:px-7">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {type ? (
           <div className="flex items-center gap-3">
-            <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-brand-700 text-white shadow-lg shadow-brand-700/25"><Icon name={type.icon} size={22} /></span>
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-700 text-white shadow-lg shadow-brand-700/25"><Icon name={type.icon} size={20} /></span>
             <div className="leading-tight">
               <p className="text-xs font-medium text-muted">You’re searching for</p>
               <p className="font-display text-xl font-bold">{type.label}</p>
@@ -46,9 +47,13 @@ function Journey({ step, type, emp }) {
           {STEPS.map((s, i) => {
             const done = i < current;
             const active = i === current;
+            const Tag = done ? "button" : "span";
             return (
               <li key={s.id} className="flex items-center gap-2" aria-current={active ? "step" : undefined}>
-                <span className={`flex items-center gap-2 rounded-full py-1.5 pr-3.5 pl-1.5 text-sm font-semibold transition-colors ${active ? "bg-brand-900 text-white shadow-md shadow-brand-900/20" : done ? "bg-white text-ink ring-1 ring-line" : "text-muted"}`}>
+                <Tag
+                  {...(done && { type: "button", onClick: () => onGo(s.id), title: `Change ${s.label.toLowerCase()}` })}
+                  className={`flex items-center gap-2 rounded-full py-1.5 pr-3.5 pl-1.5 text-left text-sm font-semibold transition-colors ${active ? "bg-brand-900 text-white shadow-md shadow-brand-900/20" : done ? "cursor-pointer bg-white text-ink ring-1 ring-line hover:bg-brand-50 hover:ring-brand-300 focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:outline-none" : "text-muted"}`}
+                >
                   <span className={`grid size-6 place-items-center rounded-full text-xs font-bold ${done ? "bg-flame-400 text-ink" : active ? "bg-white text-brand-800" : "bg-brand-100 text-brand-500"}`}>
                     {done ? <Icon name="Check" size={13} strokeWidth={3} /> : i + 1}
                   </span>
@@ -56,7 +61,8 @@ function Journey({ step, type, emp }) {
                     {s.label}
                     {s.id === "employment" && done && empLabel && <span className="block text-[11px] font-medium text-muted">{empLabel}</span>}
                   </span>
-                </span>
+                  {done && <Icon name="Pencil" size={12} className="text-brand-500" />}
+                </Tag>
                 {i < STEPS.length - 1 && <span className={`h-0.5 w-5 rounded-full lg:w-7 ${done ? "bg-flame-400" : "bg-line"}`} />}
               </li>
             );
@@ -79,7 +85,7 @@ function Journey({ step, type, emp }) {
 function Tip({ step, className = "lg:max-w-xs", dark = false }) {
   if (!TIPS[step]) return null;
   return (
-    <div className={`step-anim rounded-2xl p-4 text-sm ${dark ? "bg-white/5 text-brand-100 ring-1 ring-white/10" : "bg-brand-50 text-brand-900 ring-1 ring-brand-100"} ${className}`}>
+    <div className={`step-anim rounded-xl px-3.5 py-3 text-sm ${dark ? "bg-white/5 text-brand-100 ring-1 ring-white/10" : "bg-brand-50 text-brand-900 ring-1 ring-brand-100"} ${className}`}>
       <p className={`mb-1 flex items-center gap-2 font-semibold ${dark ? "text-white" : ""}`}><Icon name="Info" size={15} className="text-flame-400" /> Good to know</p>
       <p className={dark ? "text-brand-200" : "text-brand-800/80"}>{TIPS[step]}</p>
     </div>
@@ -90,12 +96,12 @@ function Tip({ step, className = "lg:max-w-xs", dark = false }) {
 function TypeStep({ onPick }) {
   return (
     <div>
-      <h1 className="step-anim text-3xl font-bold sm:text-4xl">What kind of loan do you need?</h1>
-      <p className="step-anim mt-2 text-muted">Choose one to see tailored offers from 50+ lenders.</p>
-      <div className="mt-8 grid gap-3 sm:grid-cols-2" role="group" aria-label="Loan type">
+      <h1 className="step-anim text-2xl font-bold sm:text-3xl">What kind of loan do you need?</h1>
+      <p className="step-anim mt-1 text-muted">Choose one to see tailored offers from 50+ lenders.</p>
+      <div className="mt-4 grid gap-2.5 sm:grid-cols-2" role="group" aria-label="Loan type">
         {LOAN_TYPES.map((t) => (
-          <div key={t.id} className="step-anim"><button type="button" onClick={() => onPick(t.id)} className="group w-full flex items-center gap-4 rounded-2xl border border-line bg-white p-4 text-left transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg">
-            <LoanIcon name={t.icon} className="size-12 group-hover:bg-brand-700 group-hover:text-white" size={24} />
+          <div key={t.id} className="step-anim"><button type="button" onClick={() => onPick(t.id)} className="group w-full flex items-center gap-3 rounded-xl border border-line bg-white px-3.5 py-2.5 text-left transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg">
+            <LoanIcon name={t.icon} className="size-10 group-hover:bg-brand-700 group-hover:text-white" size={20} />
             <span className="flex-1 leading-tight">
               <span className="block font-semibold">{t.label}</span>
               <span className="text-sm text-muted">{t.tagline}</span>
@@ -147,12 +153,12 @@ function EmploymentStep({ type, value, onPick }) {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="text-center">
-        <h1 className="step-anim text-3xl font-bold sm:text-4xl">How are you employed?</h1>
-        <p className="step-anim mx-auto mt-2 max-w-xl text-muted">Pick your main source of income. Lenders treat each profile differently for a {type.label.toLowerCase()}, so this keeps your offers realistic.</p>
+        <h1 className="step-anim text-2xl font-bold sm:text-3xl">How are you employed?</h1>
+        <p className="step-anim mx-auto mt-1 max-w-xl text-[15px] text-muted">Pick your main source of income. Lenders treat each profile differently for a {type.label.toLowerCase()}, so this keeps your offers realistic.</p>
       </div>
 
       {/* Income group */}
-      <div role="tablist" aria-label="Income group" className="step-anim mt-8 grid gap-1.5 rounded-[22px] bg-brand-50 p-1.5 ring-1 ring-brand-100 sm:grid-cols-2">
+      <div role="tablist" aria-label="Income group" className="step-anim mt-4 grid gap-1.5 rounded-2xl bg-brand-50 p-1 ring-1 ring-brand-100 sm:grid-cols-2">
         {EMP_GROUPS.map((g) => {
           const on = g.id === group;
           const hasPick = pickedInfo?.group === g.id;
@@ -165,9 +171,9 @@ function EmploymentStep({ type, value, onPick }) {
               aria-selected={on}
               aria-controls="emp-options"
               onClick={() => switchGroup(g.id)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 text-left transition-[background-color,box-shadow] duration-300 ${on ? "bg-white shadow-[0_10px_30px_-18px_rgb(36_16_82/0.6)]" : "hover:bg-white/60"}`}
+              className={`flex items-center gap-3 rounded-xl px-3.5 py-2 text-left transition-[background-color,box-shadow] duration-300 ${on ? "bg-white shadow-[0_10px_30px_-18px_rgb(36_16_82/0.6)]" : "hover:bg-white/60"}`}
             >
-              <span className={`grid size-10 shrink-0 place-items-center rounded-xl transition-colors duration-300 ${on ? "bg-brand-900 text-white" : "bg-white text-brand-700 ring-1 ring-brand-100"}`}>
+              <span className={`grid size-9 shrink-0 place-items-center rounded-lg transition-colors duration-300 ${on ? "bg-brand-900 text-white" : "bg-white text-brand-700 ring-1 ring-brand-100"}`}>
                 <Icon name={g.icon} size={18} />
               </span>
               <span className="min-w-0 flex-1 leading-tight">
@@ -181,8 +187,8 @@ function EmploymentStep({ type, value, onPick }) {
       </div>
 
       {/* Options in the chosen group */}
-      <div id="emp-options" role="tabpanel" aria-labelledby={`eg-tab-${group}`} className="mt-5">
-        <div ref={list} role="radiogroup" aria-label="Employment type" className="grid gap-2.5">
+      <div id="emp-options" role="tabpanel" aria-labelledby={`eg-tab-${group}`} className="mt-2.5">
+        <div ref={list} role="radiogroup" aria-label="Employment type" className="grid gap-1.5">
           {options.map((e, idx) => {
             const on = picked === e.id;
             const focusable = on || (!options.some((o) => o.id === picked) && idx === 0);
@@ -196,7 +202,7 @@ function EmploymentStep({ type, value, onPick }) {
                 onClick={() => setPicked(e.id)}
                 onKeyDown={(ev) => onKey(ev, e.id)}
                 onDoubleClick={() => onPick(e.id)}
-                className={`step-anim group flex w-full items-center gap-3.5 rounded-2xl border bg-white px-4 py-3.5 text-left transition-[border-color,box-shadow,background-color] duration-300 ${
+                className={`step-anim group flex w-full items-center gap-3 rounded-xl border bg-white px-3.5 py-2.5 text-left transition-[border-color,box-shadow,background-color] duration-300 ${
                   on ? "border-brand-600 bg-brand-50/50 ring-2 ring-brand-600/15" : "border-line hover:border-brand-300 hover:bg-paper"
                 }`}
               >
@@ -205,7 +211,7 @@ function EmploymentStep({ type, value, onPick }) {
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
                   <span className="block font-semibold">{e.label}</span>
-                  <span className="mt-0.5 block text-sm text-muted">{e.desc}</span>
+                  <span className="block text-sm text-muted">{e.desc}</span>
                 </span>
                 <span className={`grid size-5 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? "border-brand-700 bg-brand-700" : "border-line bg-white"}`}>
                   <Icon name="Check" size={11} strokeWidth={3.5} className={`text-white transition-transform duration-300 ease-out-expo ${on ? "scale-100" : "scale-0"}`} />
@@ -217,15 +223,15 @@ function EmploymentStep({ type, value, onPick }) {
       </div>
 
       {/* Documents + continue */}
-      <div className={`step-anim mt-6 overflow-hidden rounded-2xl transition-colors duration-300 ${pickedInfo ? "bg-gradient-to-br from-brand-800 to-brand-950 text-white shadow-[0_24px_50px_-26px_rgb(36_16_82/0.9)]" : "bg-paper ring-1 ring-line"}`}>
+      <div className={`step-anim mt-3 overflow-hidden rounded-2xl transition-colors duration-300 ${pickedInfo ? "bg-gradient-to-br from-brand-800 to-brand-950 text-white shadow-[0_24px_50px_-26px_rgb(36_16_82/0.9)]" : "bg-paper ring-1 ring-line"}`}>
         <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
           {pickedInfo ? (
             <div key={pickedInfo.id} className="min-w-0">
-              <p className="flex items-center gap-1.5 text-xs font-semibold text-brand-200"><Icon name="FileText" size={13} /> Keep these handy for your application</p>
-              <ul className="mt-2 flex flex-wrap gap-1.5">
+              <p className="flex items-center gap-1.5 text-[13px] font-semibold text-brand-100"><Icon name="FileText" size={14} className="text-flame-400" /> Keep these handy for your application</p>
+              <ul className="mt-2.5 flex flex-wrap gap-1.5">
                 {pickedInfo.docs.map((d) => (
-                  <li key={d} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-xs font-medium ring-1 ring-white/15">
-                    <Icon name="Check" size={11} strokeWidth={3} className="text-flame-400" />{d}
+                  <li key={d} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[13px] font-medium ring-1 ring-white/15">
+                    <Icon name="Check" size={12} strokeWidth={3} className="text-flame-400" />{d}
                   </li>
                 ))}
               </ul>
@@ -240,7 +246,7 @@ function EmploymentStep({ type, value, onPick }) {
       </div>
 
       {/* Notes */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <p className="step-anim flex items-start gap-2 text-sm text-muted">
           <Icon name="Info" size={15} className="mt-0.5 shrink-0 text-brand-600" />
           More than one source? Choose the one that brings in the most — you can add the rest to your dashboard later.
@@ -253,20 +259,22 @@ function EmploymentStep({ type, value, onPick }) {
 
 /* ---------- Step 3: details ---------- */
 /** A white rounded row with a small icon and label, matching the employment option rows. */
-function FieldRow({ icon, label, htmlFor, labelId, children }) {
+/** `aside`: a short note shown beside the label on wider screens. */
+function FieldRow({ icon, label, htmlFor, labelId, aside, children }) {
   const Tag = htmlFor ? "label" : "p";
   return (
-    <div className="step-anim rounded-2xl border border-line bg-white p-4 transition-colors focus-within:border-brand-300">
+    <div className="step-anim rounded-xl border border-line bg-white px-3.5 py-3 transition-colors focus-within:border-brand-300">
       <Tag id={labelId} htmlFor={htmlFor} className="flex items-center gap-3">
-        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700"><Icon name={icon} size={17} /></span>
-        <span className="font-semibold">{label}</span>
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-brand-50 text-brand-700"><Icon name={icon} size={16} /></span>
+        <span className="text-[15px] font-semibold">{label}</span>
+        {aside && <span className="ml-auto hidden text-right text-xs font-normal text-muted sm:block">{aside}</span>}
       </Tag>
-      <div className="mt-3">{children}</div>
+      <div className="mt-2.5">{children}</div>
     </div>
   );
 }
 
-function Money({ id, value, onChange, error, hint, onBlur, placeholder }) {
+function Money({ id, value, onChange, error, hint, hintPhoneOnly, onBlur, placeholder }) {
   return (
     <div>
       <div className={`flex items-center rounded-xl border bg-paper px-3.5 transition-colors focus-within:bg-white focus-within:ring-4 ${error ? "border-red-600 focus-within:ring-red-100" : "border-line focus-within:border-brand-500 focus-within:ring-brand-100"}`}>
@@ -281,11 +289,11 @@ function Money({ id, value, onChange, error, hint, onBlur, placeholder }) {
           onBlur={onBlur}
           aria-invalid={!!error}
           aria-describedby={`${id}-help`}
-          className="min-h-12 w-full bg-transparent px-2 font-display text-lg font-bold tabular-nums caret-flame-500 outline-none placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-muted/70"
+          className="min-h-11 w-full bg-transparent px-2 font-display text-lg font-bold tabular-nums caret-flame-500 outline-none placeholder:font-sans placeholder:text-base placeholder:font-normal placeholder:text-muted/70"
         />
         {value > 0 && <span className="shrink-0 rounded-lg bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700">{formatShort(value)}</span>}
       </div>
-      <p id={`${id}-help`} role={error ? "alert" : undefined} className={`mt-1.5 text-xs ${error ? "text-red-700" : "text-muted"}`}>{error || hint}</p>
+      <p id={`${id}-help`} role={error ? "alert" : undefined} className={`mt-1 text-xs ${error ? "text-red-700" : `text-muted ${hintPhoneOnly ? "sm:hidden" : ""}`}`}>{error || hint}</p>
     </div>
   );
 }
@@ -323,24 +331,24 @@ function DetailsStep({ type, emp, initial, onSubmit }) {
   return (
     <form onSubmit={submit} noValidate className="mx-auto max-w-3xl">
       <div className="text-center">
-        <h1 className="step-anim text-3xl font-bold sm:text-4xl">A few details to find your best offers</h1>
-        <p className="step-anim mx-auto mt-2 max-w-xl text-muted">Takes less than a minute. No documents needed right now.</p>
+        <h1 className="step-anim text-2xl font-bold sm:text-3xl">A few details to find your best offers</h1>
+        <p className="step-anim mx-auto mt-1 max-w-xl text-[15px] text-muted">Takes less than a minute. No documents needed right now.</p>
       </div>
 
-      <div className="mt-8 grid gap-2.5">
-        <FieldRow icon="IndianRupee" label="Enter amount you need" htmlFor="f-amount">
-          <Money id="f-amount" placeholder={`e.g. ${inr.format(type.defaultAmount)}`} value={amount} onChange={setAmount} onBlur={() => blur("amount")} error={show("amount")} hint={`Any amount from ${formatShort(type.min)} to ${formatShort(type.max)} — or pick one below.`} />
-          <div className="mt-3 flex flex-wrap gap-1.5">
+      <div className="mt-4 grid gap-2">
+        <FieldRow icon="IndianRupee" label="Enter amount you need" htmlFor="f-amount" aside={`${formatShort(type.min)} – ${formatShort(type.max)}, or pick one below`}>
+          <Money id="f-amount" placeholder={`e.g. ${inr.format(type.defaultAmount)}`} value={amount} onChange={setAmount} onBlur={() => blur("amount")} error={show("amount")} hint={`Any amount from ${formatShort(type.min)} to ${formatShort(type.max)} — or pick one below.`} hintPhoneOnly />
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
             {type.amounts.map((x) => (
-              <button type="button" key={x} aria-pressed={amount === x} onClick={() => setAmount(x)} className="chip min-h-9 px-3.5 text-sm">{formatShort(x)}</button>
+              <button type="button" key={x} aria-pressed={amount === x} onClick={() => setAmount(x)} className="chip min-h-8 px-3 text-sm">{formatShort(x)}</button>
             ))}
           </div>
         </FieldRow>
 
         {/* Tenure: segmented, like the income-group tabs */}
-        <div className="step-anim mt-3 mb-1">
-          <p id="d-tenure" className="mb-2 flex items-center gap-2 px-1 text-sm font-semibold"><Icon name="CalendarDays" size={15} className="text-brand-600" /> Repayment tenure</p>
-          <div role="radiogroup" aria-labelledby="d-tenure" className="flex gap-1 rounded-[22px] bg-brand-50 p-1.5 ring-1 ring-brand-100">
+        <div className="step-anim mt-1.5 sm:flex sm:items-center sm:gap-4">
+          <p id="d-tenure" className="mb-1.5 flex shrink-0 sm:mb-0 items-center gap-2 px-1 text-sm font-semibold"><Icon name="CalendarDays" size={15} className="text-brand-600" /> Repayment tenure</p>
+          <div role="radiogroup" aria-labelledby="d-tenure" className="flex gap-1 rounded-2xl bg-brand-50 p-1 ring-1 ring-brand-100 sm:flex-1">
             {type.tenures.map((y) => {
               const on = tenure === y;
               return (
@@ -350,7 +358,7 @@ function DetailsStep({ type, emp, initial, onSubmit }) {
                   key={y}
                   aria-checked={on}
                   onClick={() => setTenure(y)}
-                  className={`min-h-11 flex-1 rounded-2xl px-2 whitespace-nowrap text-sm font-semibold transition-[background-color,box-shadow,color] duration-300 ${on ? "bg-white text-brand-800 shadow-[0_10px_30px_-18px_rgb(36_16_82/0.6)]" : "text-muted hover:bg-white/60 hover:text-ink"}`}
+                  className={`min-h-10 flex-1 rounded-xl px-2 whitespace-nowrap text-sm font-semibold transition-[background-color,box-shadow,color] duration-300 ${on ? "bg-white text-brand-800 shadow-[0_10px_30px_-18px_rgb(36_16_82/0.6)]" : "text-muted hover:bg-white/60 hover:text-ink"}`}
                 >
                   {y}<span className="max-sm:hidden"> {y > 1 ? "yrs" : "yr"}</span>
                 </button>
@@ -359,7 +367,7 @@ function DetailsStep({ type, emp, initial, onSubmit }) {
           </div>
         </div>
 
-        <div className="grid gap-2.5 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           <FieldRow icon="MapPin" label="Current pincode" htmlFor="f-pincode">
             <div className={`flex items-center rounded-xl border bg-paper px-3.5 transition-colors focus-within:bg-white focus-within:ring-4 ${show("pincode") ? "border-red-600 focus-within:ring-red-100" : "border-line focus-within:border-brand-500 focus-within:ring-brand-100"}`}>
               <input
@@ -373,10 +381,10 @@ function DetailsStep({ type, emp, initial, onSubmit }) {
                 onBlur={() => blur("pincode")}
                 aria-invalid={!!show("pincode")}
                 aria-describedby="f-pincode-help"
-                className="min-h-12 w-full bg-transparent font-display text-lg font-bold tracking-[0.2em] tabular-nums outline-none placeholder:font-normal placeholder:tracking-normal placeholder:text-muted/60"
+                className="min-h-11 w-full bg-transparent font-display text-lg font-bold tracking-[0.2em] tabular-nums outline-none placeholder:font-normal placeholder:tracking-normal placeholder:text-muted/60"
               />
             </div>
-            <p id="f-pincode-help" role={show("pincode") ? "alert" : undefined} className={`mt-1.5 text-xs ${show("pincode") ? "text-red-700" : "text-muted"}`}>
+            <p id="f-pincode-help" role={show("pincode") ? "alert" : undefined} className={`mt-1 text-xs ${show("pincode") ? "text-red-700" : "text-muted"}`}>
               {show("pincode") || "Lenders serve specific locations."}
             </p>
           </FieldRow>
@@ -387,8 +395,8 @@ function DetailsStep({ type, emp, initial, onSubmit }) {
       </div>
 
       {/* Summary + submit, the same dark bar as the employment step */}
-      <div className="step-anim mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-brand-950 text-white shadow-[0_24px_50px_-26px_rgb(36_16_82/0.9)]">
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <div className="step-anim mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-brand-800 to-brand-950 text-white shadow-[0_24px_50px_-26px_rgb(36_16_82/0.9)]">
+        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-xs font-semibold text-brand-200"><Icon name="ClipboardCheck" size={13} /> Your search</p>
             <ul className="mt-2 flex flex-wrap gap-1.5">
@@ -410,7 +418,7 @@ function DetailsStep({ type, emp, initial, onSubmit }) {
       </div>
 
       {/* Notes */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <p className="step-anim flex items-start gap-2 text-sm text-muted">
           <Icon name="ShieldCheck" size={15} className="mt-0.5 shrink-0 text-success" />
           No impact on your credit score
@@ -425,18 +433,29 @@ function DetailsStep({ type, emp, initial, onSubmit }) {
 export default function Search() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const root = useRef(null);
 
   const typeId = params.get("type");
-  const emp = params.get("emp");
+  // An unknown ?emp= (old or hand-edited link) counts as not chosen yet.
+  const emp = EMPLOYMENT.some((e) => e.id === params.get("emp")) ? params.get("emp") : null;
   const type = typeId ? loanById(typeId) : null;
   const step = !type ? "type" : !emp ? "employment" : "details";
   const stepIndex = STEPS.findIndex((s) => s.id === step);
 
-  const update = (patch) => {
+  /** `state` rides along in history (used to pre-select the previous employment when going back). */
+  const update = (patch, state) => {
     const next = new URLSearchParams(params);
     Object.entries(patch).forEach(([k, v]) => (v == null ? next.delete(k) : next.set(k, v)));
-    setParams(next); // pushes history so the browser back button steps back
+    setParams(next, { state }); // pushes history so the browser back button steps back
+  };
+
+  // Jump back to a finished step; the rest of the answers stay in the URL, so nothing is retyped.
+  const goTo = (id) => {
+    // Employment, income and pincode are kept (picking a type returns straight to details);
+    // amount and tenure depend on the loan type, so they reset — same as the type chips above.
+    if (id === "type") update({ type: null, amount: null, tenure: null });
+    if (id === "employment") update({ emp: null }, { emp });
   };
 
   useGSAP(
@@ -452,20 +471,20 @@ export default function Search() {
   );
 
   const back = () => {
-    if (step === "details") update({ emp: null });
+    if (step === "details") update({ emp: null }, { emp });
     else if (step === "employment") update({ type: null });
     else navigate("/");
   };
 
   return (
-    <div ref={root} className="min-h-[calc(100dvh-72px)] bg-gradient-to-b from-brand-50 to-paper pb-20">
+    <div ref={root} className="min-h-[calc(100dvh-72px)] bg-gradient-to-b from-brand-50 to-paper pb-12">
       <div className="h-1 bg-brand-100">
         <div className="step-progress h-full origin-left bg-gradient-to-r from-brand-600 to-flame-500" style={{ transform: `scaleX(${(stepIndex + 1) / STEPS.length})` }} />
       </div>
 
-      <div className="container-x pt-6 sm:pt-10">
-        <div className="mb-6 flex items-center justify-between gap-4">
-          <button onClick={back} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 font-medium text-muted hover:text-ink">
+      <div className="container-x pt-3 sm:pt-4">
+        <div className="mb-3 flex items-center justify-between gap-4">
+          <button onClick={back} className="inline-flex min-h-10 items-center gap-2 rounded-xl px-2 font-medium text-muted hover:text-ink">
             <Icon name="ArrowLeft" size={18} /> Back
           </button>
           {type && (
@@ -480,16 +499,16 @@ export default function Search() {
         </div>
 
         <div className="rounded-[28px] border border-line bg-white shadow-[0_30px_60px_-45px_rgb(36_16_82/0.5)]">
-          <div className="overflow-hidden rounded-t-[28px]"><Journey step={step} type={type} emp={emp} /></div>
+          <div className="overflow-hidden rounded-t-[28px]"><Journey step={step} type={type} emp={emp} onGo={goTo} /></div>
 
-          <div key={step + (type?.id ?? "")} className="p-6 sm:p-10">
+          <div key={step + (type?.id ?? "")} className="p-4 sm:p-6">
             {step === "type" && (
               <>
                 <TypeStep onPick={(id) => update({ type: id })} />
-                <div className="mt-8"><Tip step="type" /></div>
+                <div className="mt-4"><Tip step="type" /></div>
               </>
             )}
-            {step === "employment" && <EmploymentStep type={type} value={emp} onPick={(id) => update({ emp: id })} />}
+            {step === "employment" && <EmploymentStep type={type} value={emp ?? location.state?.emp} onPick={(id) => update({ emp: id })} />}
             {step === "details" && (
               <>
               <DetailsStep
@@ -511,7 +530,7 @@ export default function Search() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-sm text-muted">
+        <p className="mt-5 text-center text-sm text-muted">
           Already applied? <Link to="/login" className="font-semibold text-brand-700 underline-offset-4 hover:underline">Log in to track your application</Link>
         </p>
       </div>

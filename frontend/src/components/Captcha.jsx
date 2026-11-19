@@ -26,12 +26,15 @@ export class CaptchaError extends Error {}
 
 /**
  * <Captcha ref={captcha} /> then `await captcha.current.getToken()` right before submitting.
- * Each token is single-use; getToken() always fetches a fresh one.
+ * A token is fetched in the background once the widget renders; getToken() uses it while fresh,
+ * otherwise fetches a new one. Each token is single-use.
  */
 export function Captcha({ ref, theme = "light", className = "" }) {
   const box = useRef(null);
   const widget = useRef(null);
   const pending = useRef(null);
+  const ready = useRef(null); // { token, at } — fetched in the background when the form appears
+  const running = useRef(false); // a check is in progress
 
   const settle = (fn, value) => {
     const p = pending.current;
@@ -50,10 +53,17 @@ export function Captcha({ ref, theme = "light", className = "" }) {
           theme,
           execution: "execute",
           appearance: "interaction-only",
-          callback: (token) => settle("resolve", token),
-          "error-callback": () => { settle("reject", new CaptchaError("Security check failed — please try again.")); return true; },
-          "expired-callback": () => window.turnstile?.reset(widget.current),
+          callback: (token) => {
+            running.current = false;
+            if (pending.current) settle("resolve", token);
+            else ready.current = { token, at: Date.now() };
+          },
+          "error-callback": () => { running.current = false; settle("reject", new CaptchaError("Security check failed — please try again.")); return true; },
+          "expired-callback": () => { ready.current = null; window.turnstile?.reset(widget.current); },
         });
+        // Run the check now, while the visitor fills in the form, so submitting doesn't wait ~2s for it.
+        running.current = true;
+        ts.execute(widget.current);
       })
       .catch(() => {});
     return () => {
@@ -74,10 +84,16 @@ export function Captcha({ ref, theme = "light", className = "" }) {
         throw new CaptchaError("The security check couldn’t load. Check your connection and try again.");
       }
       if (widget.current == null) throw new CaptchaError("The security check is still loading — try again in a moment.");
+      // Tokens last 300s and are single-use: take the prefetched one if it's fresh, else fetch a new one.
+      const r = ready.current;
+      ready.current = null;
+      if (r && Date.now() - r.at < 240000) return r.token;
       settle("reject", new CaptchaError("Security check was restarted."));
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => settle("reject", new CaptchaError("The security check timed out — please try again.")), 60000);
         pending.current = { resolve, reject, timer };
+        if (running.current) return; // the background check is still running: its callback resolves this
+        running.current = true;
         ts.reset(widget.current);
         ts.execute(widget.current);
       });
