@@ -18,16 +18,17 @@ const RETRY_DELAYS = [500, 1000, 2000, 3000];
 const UNAVAILABLE_MSG = "Our server is temporarily unavailable. Please try again in a moment.";
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function request(path, { method = "GET", body, query } = {}) {
+async function request(path, { method = "GET", body, query, blob = false } = {}) {
   const qs = query ? "?" + new URLSearchParams(query) : "";
   const token = getToken();
+  const file = body instanceof Blob; // uploads send the file itself, not JSON
   const init = {
     method,
     headers: {
-      ...(body && { "Content-Type": "application/json" }),
+      ...(body && { "Content-Type": file ? "application/octet-stream" : "application/json" }),
       ...(token && { Authorization: `Bearer ${token}` }),
     },
-    body: body ? JSON.stringify(body) : undefined,
+    body: file ? body : body ? JSON.stringify(body) : undefined,
   };
 
   let res;
@@ -41,6 +42,7 @@ async function request(path, { method = "GET", body, query } = {}) {
     await wait(RETRY_DELAYS[attempt]);
   }
 
+  if (blob && res.ok) return res.blob();
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     const fallback = UNREACHABLE.has(res.status) ? UNAVAILABLE_MSG : `Request failed (${res.status})`;
@@ -79,6 +81,13 @@ export const api = {
   updateProfile: (profile) => request("/me/profile", { method: "PATCH", body: profile }),
   apply: (offer) => request("/applications", { method: "POST", body: offer }),
   applications: () => request("/applications"),
+
+  // Documents
+  documents: () => request("/me/documents"),
+  /** kind: one of the CRM document types — "pan", "aadhaar", "salary_slip", "bank_statement"… */
+  uploadDocument: (kind, file) => request("/me/documents", { method: "POST", query: { kind, name: file.name }, body: file }),
+  documentFile: (id) => request(`/me/documents/${encodeURIComponent(id)}`, { blob: true }),
+  deleteDocument: (id) => request(`/me/documents/${encodeURIComponent(id)}`, { method: "DELETE" }),
 
   // Lead forms
   requestCallback: (lead) => request("/leads/callback", { method: "POST", body: lead }),

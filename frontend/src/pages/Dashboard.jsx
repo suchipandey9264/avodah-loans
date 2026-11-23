@@ -1,9 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { contactLabel, useAuth } from "../lib/auth";
 import { api, getToken } from "../lib/api";
 import { clearActivity, removeSearch, toggleSaved, updateProfile, useActivity } from "../lib/activity";
-import { EMPLOYMENT, LENDERS, empById, loanById } from "../lib/loans";
+import { EMPLOYMENT, LENDERS, LOAN_TYPES, empById, loanById } from "../lib/loans";
 import { formatINR, formatShort } from "../lib/emi";
 import { gsap, useGSAP, MOTION_OK } from "../lib/motion";
 import { Icon, LoanIcon } from "../components/ui";
@@ -11,6 +11,7 @@ import { Icon, LoanIcon } from "../components/ui";
 const TABS = [
   { id: "overview", label: "Overview", icon: "LayoutDashboard" },
   { id: "applications", label: "Applications", icon: "FileText" },
+  { id: "documents", label: "Documents", icon: "FileUp" },
   { id: "saved", label: "Saved offers", icon: "Heart" },
   { id: "searches", label: "Search history", icon: "History" },
   { id: "requests", label: "Requests", icon: "Activity" },
@@ -280,8 +281,204 @@ function ApplicationCard({ a }) {
           );
         })}
       </ol>
-      <p className="mt-4 flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-800 ring-1 ring-brand-100"><Icon name="PhoneCall" size={16} /> Next: a loan advisor will call you to collect documents.</p>
+      <p className="mt-4 flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-800 ring-1 ring-brand-100"><Icon name="PhoneCall" size={16} className="shrink-0" /> <span>Next: a loan advisor will call you. <Link to={`/dashboard?tab=documents&loan=${a.type}`} className="font-semibold underline">Upload your documents</Link> to speed it up.</span></p>
     </li>
+  );
+}
+
+/* ---------- Documents tab ---------- */
+
+// Same ids as the CRM's DOCUMENT_TYPES; `only` shows a type to one employment group.
+const DOC_KINDS = [
+  { id: "pan", label: "PAN card", icon: "IdCard", hint: "Front side, all details readable" },
+  { id: "aadhaar", label: "Aadhaar", icon: "IdCard", hint: "Front and back — you can mask the first 8 digits" },
+  { id: "photo", label: "Photograph", icon: "UserRound", hint: "Recent passport-size photo" },
+  { id: "address_proof", label: "Address proof", icon: "House", hint: "Passport, utility bill or rent agreement, if Aadhaar has an old address" },
+  { id: "salary_slip", label: "Salary slips", icon: "IndianRupee", hint: "Last 3 months", only: "salaried" },
+  { id: "form16", label: "Form 16", icon: "FileText", hint: "Latest year, from your employer", only: "salaried" },
+  { id: "itr", label: "Income tax returns", icon: "FileText", hint: { salaried: "Latest ITR, if you have one", self: "Last 2 years, with computation of income" } },
+  { id: "bank_statement", label: "Bank statements", icon: "Landmark", hint: { salaried: "Last 6 months, from your salary account", self: "Last 12 months, from your main business account" } },
+  { id: "property", label: "Property papers", icon: "Building", hint: "Sale agreement or title deed, and the approved building plan" },
+  { id: "other", label: "Other documents", icon: "FileText", hint: "Anything else your advisor asks for" },
+];
+// Papers specific to a loan that have no type of their own in the CRM: they go under "Other documents".
+const LOAN_EXTRAS = {
+  home: "Allotment letter, builder’s NOC or anything else your advisor asks for",
+  lap: "Latest property tax receipt or anything else your advisor asks for",
+  personal: "Offer letter or anything else your advisor asks for",
+  education: "Admission letter, fee structure and the co-applicant’s KYC",
+  gold: "Nothing else needed — your gold is valued at the branch",
+  business: "GST / Udyam registration and business address proof",
+  car: "Car quotation or proforma invoice from the dealer",
+};
+/** Same rule as the CRM's requiredDocuments(): KYC, income proof by employment type, property papers for secured loans. */
+const requiredDocs = (group, loan) =>
+  ["pan", "aadhaar", "address_proof", group === "self" ? "itr" : "salary_slip", "bank_statement", ...(["home", "lap"].includes(loan) ? ["property"] : [])];
+const DOC_STATUS = {
+  uploaded: { label: "In review", cls: "bg-white text-brand-700 ring-brand-200" },
+  verified: { label: "Verified", cls: "bg-green-50 text-success ring-green-200" },
+  rejected: { label: "Rejected", cls: "bg-red-50 text-red-700 ring-red-200" },
+};
+const DOC_TYPES = ["application/pdf", "image/jpeg", "image/png"];
+const DOC_MAX = 5 * 1024 * 1024;
+const fileSize = (n) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`);
+
+function DocumentsForm({ group = "salaried", loan, onLoan, onSaved }) {
+  const [docs, setDocs] = useState(null); // null while loading
+  const [busy, setBusy] = useState(""); // kind being uploaded, or the id of a document being deleted
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api.documents().then(setDocs, (err) => { setDocs([]); setError(err.message); });
+  }, []);
+
+  const upload = async (kind, input) => {
+    const files = [...input.files];
+    input.value = ""; // lets the same file be picked again
+    if (!files.length) return;
+    const bad = files.find((f) => !DOC_TYPES.includes(f.type) || f.size > DOC_MAX);
+    if (bad) return setError(`${bad.name}: only PDF, JPG or PNG files up to 5 MB.`);
+    setError("");
+    setBusy(kind);
+    try {
+      for (const f of files) {
+        const doc = await api.uploadDocument(kind, f);
+        setDocs((d) => [doc, ...d]);
+      }
+      onSaved(files.length > 1 ? `${files.length} documents uploaded` : "Document uploaded");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const view = async (doc) => {
+    const tab = window.open("", "_blank"); // open now: browsers block pop-ups opened after a network wait
+    try {
+      const url = URL.createObjectURL(await api.documentFile(doc.id));
+      if (tab) tab.location = url;
+      else window.location.assign(url);
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (err) {
+      tab?.close();
+      setError(err.message);
+    }
+  };
+
+  const remove = async (doc) => {
+    setBusy(doc.id);
+    try {
+      await api.deleteDocument(doc.id);
+      setDocs((d) => d.filter((x) => x.id !== doc.id));
+      onSaved("Document deleted");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy("");
+    }
+  };
+
+  const needed = requiredDocs(group, loan);
+  const required = needed.map((id) => DOC_KINDS.find((k) => k.id === id));
+  // Optional types for this profile; property papers only for secured loans, unless already uploaded.
+  const optional = DOC_KINDS.filter((k) => !needed.includes(k.id) && (!k.only || k.only === group) && (k.id !== "property" || docs?.some((d) => d.kind === "property")));
+  const doneCount = required.filter((k) => docs?.some((d) => d.kind === k.id && d.status !== "rejected")).length;
+
+  const card = (k, hint) => {
+    const mine = docs?.filter((d) => d.kind === k.id) ?? [];
+    const done = mine.some((d) => d.status !== "rejected");
+    const uploading = busy === k.id;
+    const locked = uploading || !docs;
+    return (
+      <li key={k.id} className="dash-anim flex flex-col rounded-2xl border border-line bg-white p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <span className={`grid size-10 shrink-0 place-items-center rounded-xl ${done ? "bg-green-50 text-success" : "bg-brand-50 text-brand-700"}`}>
+            <Icon name={done ? "CircleCheck" : k.icon} size={20} />
+          </span>
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="font-display text-base font-bold">{k.label}</p>
+            <p className="mt-1 text-sm text-muted">{hint ?? (typeof k.hint === "string" ? k.hint : k.hint[group] ?? k.hint.salaried)}</p>
+          </div>
+        </div>
+
+        {mine.length > 0 && (
+          <ul className="mt-4 grid gap-2">
+            {mine.map((d) => (
+              <li key={d.id} className="flex flex-wrap items-center gap-2 rounded-xl bg-brand-50/50 py-1.5 pr-1.5 pl-3">
+                <Icon name="FileText" size={16} className="shrink-0 text-brand-700" />
+                <button type="button" onClick={() => view(d)} className="min-w-0 flex-1 text-left leading-tight hover:text-brand-700" aria-label={`Open ${d.name}`}>
+                  <span className="block truncate text-sm font-medium">{d.name}</span>
+                  <span className="text-xs text-muted">{fileSize(d.size)} · {ago(d.ts)}</span>
+                </button>
+                <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${(DOC_STATUS[d.status] ?? DOC_STATUS.uploaded).cls}`}>{(DOC_STATUS[d.status] ?? DOC_STATUS.uploaded).label}</span>
+                {d.status !== "verified" && <button type="button" onClick={() => remove(d)} disabled={busy === d.id} className="grid size-9 shrink-0 place-items-center rounded-lg text-muted hover:bg-red-50 hover:text-red-700 disabled:opacity-50" aria-label={`Delete ${d.name}`}>
+                  <Icon name={busy === d.id ? "LoaderCircle" : "Trash2"} size={16} className={busy === d.id ? "animate-spin" : ""} />
+                </button>}
+                {d.status === "rejected" && d.note && <p className="w-full pb-1 text-xs text-red-700">{d.note}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <label className={`mt-4 inline-flex min-h-10 cursor-pointer items-center justify-center gap-1.5 self-start rounded-xl px-4 text-sm font-semibold ring-1 transition-colors focus-within:ring-4 focus-within:ring-brand-200 ${done ? "text-brand-700 ring-brand-200 hover:bg-brand-50" : "bg-brand-700 text-white ring-brand-700 hover:bg-brand-800"} ${locked ? "pointer-events-none opacity-60" : ""}`}>
+          <Icon name={uploading ? "LoaderCircle" : "Upload"} size={16} className={uploading ? "animate-spin" : ""} />
+          {uploading ? "Uploading…" : done ? "Add another" : mine.length ? "Upload again" : "Upload"}
+          <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="sr-only" disabled={locked} aria-label={`Upload ${k.label.toLowerCase()}`} onChange={(e) => upload(k.id, e.currentTarget)} />
+        </label>
+      </li>
+    );
+  };
+
+  return (
+    <div className="grid gap-4">
+      <p className="dash-anim flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-800 ring-1 ring-brand-100">
+        <Icon name="Lock" size={16} className="shrink-0" /> PDF, JPG or PNG, up to 5 MB each. Only you and your loan advisor can see them.
+      </p>
+      {error && (
+        <p role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800 ring-1 ring-red-200">
+          <Icon name="TriangleAlert" size={16} className="shrink-0" /> {error}
+        </p>
+      )}
+      {/* Loan picker: the checklist below follows the loan chosen here */}
+      <div className="dash-anim rounded-2xl border border-line bg-white p-4 sm:p-5">
+        <p className="font-display text-base font-bold" id="doc-loan">Which loan are these for?</p>
+        <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1" role="radiogroup" aria-labelledby="doc-loan">
+          {LOAN_TYPES.map((t) => {
+            const on = t.id === loan;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => onLoan(t.id)}
+                className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3.5 text-sm font-semibold ring-1 transition-colors ${on ? "bg-brand-700 text-white ring-brand-700" : "bg-white text-ink ring-line hover:ring-brand-300"}`}
+              >
+                <Icon name={t.icon} size={16} /> {t.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex items-center gap-3">
+          <span className="h-2 flex-1 overflow-hidden rounded-full bg-brand-100" role="progressbar" aria-valuenow={doneCount} aria-valuemin={0} aria-valuemax={required.length} aria-label={`Required documents for ${loanById(loan).label}`}>
+            <span className="block h-full rounded-full bg-brand-600 transition-[width] duration-500" style={{ width: `${(doneCount / required.length) * 100}%` }} />
+          </span>
+          <span className="shrink-0 text-sm font-semibold tabular-nums">{doneCount} of {required.length} required</span>
+        </div>
+      </div>
+
+      <section aria-labelledby="doc-required">
+        <h3 id="doc-required" className="text-base font-bold">Required for your {loanById(loan).label.toLowerCase()}</h3>
+        <ul className="mt-3 grid gap-4 md:grid-cols-2">{required.map((k) => card(k))}</ul>
+      </section>
+
+      <section aria-labelledby="doc-optional">
+        <h3 id="doc-optional" className="text-base font-bold">Also helpful</h3>
+        <p className="mt-0.5 text-sm text-muted">Not needed to start, but they can speed up approval.</p>
+        <ul className="mt-3 grid gap-4 md:grid-cols-2">{optional.map((k) => card(k, k.id === "other" ? LOAN_EXTRAS[loan] : undefined))}</ul>
+      </section>
+    </div>
   );
 }
 
@@ -761,6 +958,18 @@ export default function Dashboard() {
                 ) : (
                   <div className="mt-4"><Empty icon="FileText" title="No applications yet" text="Find an offer you like and tap Apply Now — you can track it here." to="/search" cta="Search Loan" /></div>
                 )}
+              </div>
+            )}
+
+            {tab === "documents" && (
+              <div className="grid gap-4">
+                <SectionTitle title="Documents" sub="Upload once — your advisor uses them for every application." />
+                <DocumentsForm
+                  group={emp?.group}
+                  loan={loanById(params.get("loan") ?? a.applications[0]?.type ?? a.searches[0]?.type).id}
+                  onLoan={(loan) => setParams({ tab: "documents", loan }, { replace: true })}
+                  onSaved={flash}
+                />
               </div>
             )}
 
