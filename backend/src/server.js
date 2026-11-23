@@ -6,6 +6,7 @@ import { captchaEnabled } from "./lib/captcha.js";
 import { apiLimiter } from "./lib/limits.js";
 import activity from "./routes/activity.js";
 import auth, { DEMO } from "./routes/auth.js";
+import documents from "./routes/documents.js";
 import loans from "./routes/loans.js";
 
 const app = express();
@@ -29,11 +30,12 @@ app.get("/api/health", async (_req, res) => {
 app.use("/api", loans);
 app.use("/api/auth", auth);
 app.use("/api", activity);
+app.use("/api", documents);
 
 app.use("/api", (_req, _res, next) => next(new HttpError(404, "Not found")));
 
 // eslint-disable-next-line no-unused-vars
-app.use((err, _req, res, _next) => {
+app.use((err, req, res, _next) => {
   let status = err.status ?? 500;
   let message = err.message;
   // PostgreSQL errors (Drizzle wraps them; the driver's error is in err.cause)
@@ -41,7 +43,7 @@ app.use((err, _req, res, _next) => {
   if (pgCode === "23505") { status = 409; message = "Already exists"; } // unique violation
   if (pgCode === "23503" || pgCode === "23514" || pgCode === "22P02") { status = 400; message = "Invalid request"; } // foreign key, check, bad uuid
   if (err.type === "entity.parse.failed") { status = 400; message = "Invalid JSON"; }
-  if (err.type === "entity.too.large") { status = 413; message = "Request is too large"; }
+  if (err.type === "entity.too.large") { status = 413; message = req.path.includes("/documents") ? "Files must be 5 MB or smaller" : "Request is too large"; }
   if (status >= 500) console.error(err);
   res.status(status).json({ error: status >= 500 && status !== 503 ? "Something went wrong" : message, ...(err.fields && { fields: err.fields }) });
 });

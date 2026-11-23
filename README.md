@@ -33,6 +33,7 @@ Backend config lives in `backend/.env` (copy from `backend/.env.example`): `DATA
 | `GET /api/auth/me`, `POST /api/auth/logout` | Session |
 | `GET/PUT /api/me/activity`, `POST /api/me/activity/:list`, `PATCH /api/me/profile` | Dashboard data (login required) |
 | `POST/GET /api/applications` | Apply to an offer / list my applications |
+| `GET/POST /api/me/documents`, `GET/DELETE /api/me/documents/:id` | My uploaded documents (PDF/JPG/PNG ≤ 5 MB). Stored in the CRM’s `documents` table for staff review |
 | `POST /api/leads/callback`, `/api/leads/credit-report` | Public lead forms |
 
 The frontend client for all of these is `frontend/src/lib/api.js`. The pages still use the local `lib/` modules; switch them to `api.*` calls page by page.

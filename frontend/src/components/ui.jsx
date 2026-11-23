@@ -6,7 +6,7 @@ import {
   LogIn, LogOut, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown, Pencil,
   Percent, Users, Landmark, Clock, Info, Smartphone, CircleCheck, TriangleAlert, Calculator, IdCard,
   ArrowLeft, Wallet, Heart, LayoutDashboard, History, FileText, Trash2, RotateCcw, Activity,
-  ExternalLink, UserRound, Laptop, IndianRupee, CalendarDays, Building, AtSign, KeyRound, ListFilter,
+  ExternalLink, UserRound, Laptop, IndianRupee, CalendarDays, Building, AtSign, KeyRound, ListFilter, Upload, LoaderCircle,
 } from "lucide-react";
 
 const Icons = {
@@ -17,7 +17,7 @@ const Icons = {
   LogIn, LogOut, ChevronDown, ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown, Pencil,
   Percent, Users, Landmark, Clock, Info, Smartphone, CircleCheck, TriangleAlert, Calculator, IdCard,
   ArrowLeft, Wallet, Heart, LayoutDashboard, History, FileText, Trash2, RotateCcw, Activity,
-  ExternalLink, UserRound, Laptop, IndianRupee, CalendarDays, Building, AtSign, KeyRound, ListFilter,
+  ExternalLink, UserRound, Laptop, IndianRupee, CalendarDays, Building, AtSign, KeyRound, ListFilter, Upload, LoaderCircle,
 };
 
 /** Renders a lucide icon by name; decorative by default. */
